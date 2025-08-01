@@ -95,5 +95,5 @@ else:
     print("\n[!] Invalid choice. Please run the program again and select 1 or 2.")
 
 
-print("\nThank you for using Aura-sec v0.3!")
+print("\nThank you for using Aura-sec v0.4!")
 print("Stay tuned for more features and updates.")
