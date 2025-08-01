@@ -12,7 +12,7 @@ A simple, unique, and extensible network port scanner designed for the cybersecu
 * **Interactive Menu:** Easy-to-use command-line interface.
 * **Normal Scan Mode:** For standard network reconnaissance.
 * **Port Range Selection:** Scan all common ports or specify a custom range.
-* **Banner Grabbing:** Identifies the service and version running on open ports. *(Coming in v0.4)*
+* **Banner Grabbing:** Identifies the service and version running on open ports.
 * **Anonymous Scan Mode:** Route scans through a proxy like Tor for OpSec. *(Planned for future release)*
 
 ## Installation
@@ -21,7 +21,7 @@ Currently, the tool can be run directly from the source code. You will need Pyth
 
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/irfan-sec/Aura-sec.git](https://github.com/irfan-sec/Aura-sec.git)
+    git clone https://github.com/irfan-sec/Aura-sec.git
     ```
 2.  Navigate to the project directory:
     ```bash
@@ -35,6 +35,7 @@ Run the main script from your terminal:
 ```bash
 python3 aurasec.py
 
+---
 
 ## HELP
 The tool will then guide you through an interactive menu to select your scan type, target, and port range.
