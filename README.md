@@ -34,3 +34,26 @@ Run the main script from your terminal:
 
 ```bash
 python3 aurasec.py
+
+
+## HELP
+The tool will then guide you through an interactive menu to select your scan type, target, and port range.
+
+Example
+$ python3 aurasec.py
+--------------------------------------------------
+        Welcome to Aura-sec v0.3
+      A scanner built for the community
+--------------------------------------------------
+
+Please select the type of scan:
+1. Normal Scan
+2. Anonymous Scan (Coming Soon!)
+Enter your choice (1 or 2): 1
+
+Please enter the target IP address: 10.129.95.232
+
+Select port range:
+1. Common Ports (1-1024)
+2. Custom Range
+Enter choice (1 or 2): 1
