@@ -1,7 +1,8 @@
-# Aura-sec v0.3
-# A unique and easy-to-use scanner for the community.
-# Coded by Irfan Ali with guidance from an AI mentor.
-
+"""
+Aura-sec v0.4
+A unique and easy-to-use scanner for the community.
+Coded by Irfan Ali with guidance from an AI mentor.
+"""
 import socket
 import sys
 
