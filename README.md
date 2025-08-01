@@ -34,7 +34,7 @@ Run the main script from your terminal:
 
 ```bash
 python3 aurasec.py
-
+```
 ---
 
 ## HELP
