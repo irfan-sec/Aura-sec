@@ -38,12 +38,20 @@ def get_ports():
             print("[!] Invalid choice. Please enter 1 or 2.")
 
 def scan_port(ip, port):
-    """Scans a single port on the target IP."""
+    """Scans a single port and grabs the service banner."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket.setdefaulttimeout(0.5)
+        socket.setdefaulttimeout(1) # We can use a slightly longer timeout
+
         if s.connect_ex((ip, port)) == 0:
-            print(f"\033[92m[+] Port {port} is OPEN\033[0m")
+            try:
+                # If connection is successful, try to receive 1024 bytes of data
+                banner = s.recv(1024).decode('utf-8').strip()
+                print(f"\033[92m[+] Port {port} is OPEN\033[0m  |  \033[96mBanner: {banner}\033[0m")
+            except:
+                # If we can't get a banner, just print the port is open
+                print(f"\033[92m[+] Port {port} is OPEN\033[0m")
+        
         s.close()
     except socket.error:
         pass
