@@ -1,5 +1,5 @@
 """
-Aura-sec v0.5.3
+Aura-sec v1.0
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
@@ -31,7 +31,7 @@ def get_target():
 def get_ports():
     """Gets the port scanning option and range from the user."""
     while True:
-        # Create the prompt text first to keep the input line short
+        # This prompt is broken into multiple lines to pass the linter
         prompt = ("Select port range:\n1. Common Ports (1-1024)\n"
                   "2. Custom Range\nEnter choice (1 or 2): ")
         choice = input(prompt)
@@ -58,10 +58,8 @@ def scan_port(port):
             try:
                 banner = sock.recv(1024).decode('utf-8').strip()
                 with PRINT_LOCK:
-                    # Broken into two lines to be under 100 characters
                     print(f"\033[92m[+] Port {port} is OPEN\033[0m  |  "
                           f"\033[96mVersion Info: {banner}\033[0m")
-            # Changed to a more specific exception
             except socket.error:
                 with PRINT_LOCK:
                     print(f"\033[92m[+] Port {port} is OPEN\033[0m")
@@ -79,7 +77,7 @@ def worker():
 # --- Main Program ---
 
 BANNER = r"""
-
+ 
    _____                                  _________              
   /  _  \  __ ______________             /   _____/ ____   ____  
  /  /_\  \|  |  \_  __ \__  \    ______  \_____  \_/ __ \_/ ___\ 
@@ -89,7 +87,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("          Welcome to Aura-sec v0.5.3")
+print("          Welcome to Aura-sec v1.0")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
@@ -103,7 +101,6 @@ if scan_choice == '1':
     for p in port_range:
         PORT_QUEUE.put(p)
 
-    # Changed num_threads to be UPPER_CASE
     NUM_THREADS = 100
     thread_list = []
     for _ in range(NUM_THREADS):
