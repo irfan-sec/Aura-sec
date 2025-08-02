@@ -123,3 +123,5 @@ else:
     print("\n[!] Invalid choice. Please run the program again and select 1 or 2.")
 
 print("\nThank you for using Aura-sec!")
+# --- End of main program ---
+# --- This code is designed to be simple and educational. ---
