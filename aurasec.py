@@ -31,8 +31,11 @@ def get_target():
 def get_ports():
     """Gets the port scanning option and range from the user."""
     while True:
-        # Shortened this line to be under 100 characters
-        choice = input("Select port range:\n1. Common Ports (1-1024)\n2. Custom Range\nEnter choice (1 or 2): ")
+        # Create the prompt text first to keep the input line short
+        prompt = ("Select port range:\n1. Common Ports (1-1024)\n"
+                  "2. Custom Range\nEnter choice (1 or 2): ")
+        choice = input(prompt)
+
         if choice == '1':
             return range(1, 1025)
         if choice == '2':
@@ -86,7 +89,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("             Welcome to Aura-sec v0.5.3")
+print("          Welcome to Aura-sec v0.5.3")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
