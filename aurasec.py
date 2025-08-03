@@ -48,11 +48,11 @@ def get_ports():
         if choice == '1':
             return range(1, 1025)
         if choice == '2':
-            port_range = get_custom_port_range()
-            if port_range:
-                return port_range
-        else:
-            print("[!] Invalid choice. Please enter 1 or 2.")
+            custom_range = get_custom_port_range()
+            if custom_range:
+                return custom_range
+            continue
+        print("[!] Invalid choice. Please enter 1 or 2.")
 
 def scan_port(port):
     """Scans a single port and grabs a banner if possible using appropriate probes."""
@@ -90,7 +90,7 @@ def scan_port(port):
     except socket.error:
         pass
 
-def get_banner(sock, port):
+def get_banner():
     """Unused placeholder for banner grabbing."""
     # Function intentionally left blank for future use
 
@@ -126,7 +126,6 @@ try:
     if scan_choice == '1':
         TARGET_IP = get_target()
         port_range = get_ports()
-        
         print(f"\n[*] Starting Scan on target: {TARGET_IP}...")
         for p in port_range:
             PORT_QUEUE.put(p)
