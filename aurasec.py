@@ -77,37 +77,22 @@ def get_generic_banner(sock):
         pass
     return ""
 
+def handle_port_connection(sock, port):
+    """Handle the connection to a port and return the banner if available."""
+    if port == 80:
+        return get_http_banner(sock)
+    if port == 443:
+        return "HTTPS"
+    return get_generic_banner(sock)
+
 def scan_port(port):
     """Scans a single port and grabs a banner if possible using appropriate probes."""
+    sock = None
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket.setdefaulttimeout(1)
         if sock.connect_ex((TARGET_IP, port)) == 0:
-            port_banner = ""
-            # --- New, Cleaner Logic ---
-            if port == 80:
-                # Send a specific probe for HTTP
-                try:
-                    sock.send(b'HEAD / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + b'\r\n\r\n')
-                    response = sock.recv(1024).decode('utf-8', errors='ignore')
-                    lines = response.split('\r\n')
-                    for line_item in lines:
-                        if 'Server:' in line_item:
-                            port_banner = line_item.split(': ')[1].strip()
-                            break
-                    if not port_banner and lines:
-                        port_banner = lines[0].strip()
-                except socket.error:
-                    pass # Keep banner empty if probe fails
-            elif port == 443:
-                # We can't grab a banner from an encrypted port this simply, so we label it
-                port_banner = "HTTPS"
-            else:
-                # Try a generic grab for all other "chatty" ports
-                try:
-                    port_banner = sock.recv(1024).decode('utf-8', errors='ignore').strip()
-                except socket.error:
-                    pass # Keep banner empty if grab fails
+            port_banner = handle_port_connection(sock, port)
             results.append((port, port_banner)) # Add our findings to the results list
         sock.close()
     except socket.error:
