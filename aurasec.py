@@ -84,7 +84,7 @@ def scan_port(port):
         pass
 
 def get_banner(sock, port):
-    """Unused placeholder for banner grabbing. Removed unused arguments for Pylint compliance."""
+    """Unused placeholder for banner grabbing."""
     # Function intentionally left blank for future use
 
 def worker():
