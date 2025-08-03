@@ -29,21 +29,28 @@ def get_target():
     target = input("Please enter the target IP address: ")
     return target
 
+def get_custom_port_range():
+    """Gets custom port range from user input."""
+    try:
+        start_port = int(input("Enter start port: "))
+        end_port = int(input("Enter end port: "))
+        return range(start_port, end_port + 1)
+    except ValueError:
+        print("[!] Invalid input. Please enter numbers only.")
+        return None
+
 def get_ports():
     """Gets the port scanning option and range from the user."""
     while True:
         prompt = ("Select port range:\n1. Common Ports (1-1024)\n"
-                  "2. Custom Range\nEnter choice (1 or 2): ")
+                 "2. Custom Range\nEnter choice (1 or 2): ")
         choice = input(prompt)
         if choice == '1':
             return range(1, 1025)
         if choice == '2':
-            try:
-                start_port = int(input("Enter start port: "))
-                end_port = int(input("Enter end port: "))
-                return range(start_port, end_port + 1)
-            except ValueError:
-                print("[!] Invalid input. Please enter numbers only.")
+            port_range = get_custom_port_range()
+            if port_range:
+                return port_range
         else:
             print("[!] Invalid choice. Please enter 1 or 2.")
 
@@ -121,7 +128,6 @@ try:
         port_range = get_ports()
         
         print(f"\n[*] Starting Scan on target: {TARGET_IP}...")
-        
         for p in port_range:
             PORT_QUEUE.put(p)
 
@@ -149,7 +155,8 @@ try:
             sorted_results = sorted(results, key=lambda x: x[0])
             for port_result, banner_result in sorted_results:
                 if banner_result:
-                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m  |  \033[96mVersion Info: {banner_result}\033[0m")
+                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m  |  "
+                          f"\033[96mVersion Info: {banner_result}\033[0m")
                 else:
                     print(f"\033[92m[+] Port {port_result} is OPEN\033[0m")
             save_results = input("\nDo you want to save the results to a file? (y/n): ").lower()
@@ -176,3 +183,5 @@ except KeyboardInterrupt:
     print("\n[!] Exiting program (Ctrl+C detected).")
 
 print("\nThank you for using Aura-sec!")
+# End of main program
+# This is the end of the aurasec.py file.
