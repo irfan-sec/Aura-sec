@@ -1,5 +1,5 @@
 """
-Aura-sec v2.0.1     
+Aura-sec v2.0.2   
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
@@ -53,6 +53,29 @@ def get_ports():
                 return custom_range
             continue
         print("[!] Invalid choice. Please enter 1 or 2.")
+
+def get_http_banner(sock):
+    """Get banner from HTTP port."""
+    try:
+        sock.send(b'HEAD / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + b'\r\n\r\n')
+        response = sock.recv(1024).decode('utf-8', errors='ignore')
+        lines = response.split('\r\n')
+        for line_item in lines:
+            if 'Server:' in line_item:
+                return line_item.split(': ')[1].strip()
+        if lines:
+            return lines[0].strip()
+    except socket.error:
+        pass
+    return ""
+
+def get_generic_banner(sock):
+    """Get banner from a generic port."""
+    try:
+        return sock.recv(1024).decode('utf-8', errors='ignore').strip()
+    except socket.error:
+        pass
+    return ""
 
 def scan_port(port):
     """Scans a single port and grabs a banner if possible using appropriate probes."""
@@ -114,7 +137,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.0.1")
+print("           Welcome to Aura-sec v2.0.2")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
