@@ -1,6 +1,6 @@
 # Aura-sec 🛡️
 
-![Version](https://img.shields.io/badge/version-v1.2-blue)
+![Version](https://img.shields.io/badge/version-v1.3-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A simple, unique, and extensible network port scanner designed for the cybersecurity community. This project is a learning tool built to understand the fundamentals of network reconnaissance.
@@ -43,7 +43,7 @@ The tool will then guide you through an interactive menu to select your scan typ
 Example
 $ python3 aurasec.py
 --------------------------------------------------
-        Welcome to Aura-sec v1.2
+        Welcome to Aura-sec v1.3
       A scanner built for the community
 --------------------------------------------------
 
@@ -58,3 +58,5 @@ Select port range:
 1. Common Ports (1-1024)
 2. Custom Range
 Enter choice (1 or 2): 1
+
+-------------------
