@@ -1,5 +1,5 @@
 """
-Aura-sec v1.0
+Aura-sec v1.2
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
@@ -8,10 +8,11 @@ import socket
 import threading
 from queue import Queue
 
-# --- Global variables for threads to access (in UPPER_CASE) ---
+# --- Global variables ---
 TARGET_IP = ""
 PORT_QUEUE = Queue()
 PRINT_LOCK = threading.Lock()
+open_ports = [] # A list to store results
 
 # --- Functions ---
 
@@ -31,7 +32,6 @@ def get_target():
 def get_ports():
     """Gets the port scanning option and range from the user."""
     while True:
-        # This prompt is broken into multiple lines to pass the linter
         prompt = ("Select port range:\n1. Common Ports (1-1024)\n"
                   "2. Custom Range\nEnter choice (1 or 2): ")
         choice = input(prompt)
@@ -49,20 +49,13 @@ def get_ports():
             print("[!] Invalid choice. Please enter 1 or 2.")
 
 def scan_port(port):
-    """Scans a single port and grabs the service banner."""
+    """Scans a single port and adds it to the list if open."""
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket.setdefaulttimeout(1)
 
         if sock.connect_ex((TARGET_IP, port)) == 0:
-            try:
-                banner = sock.recv(1024).decode('utf-8').strip()
-                with PRINT_LOCK:
-                    print(f"\033[92m[+] Port {port} is OPEN\033[0m  |  "
-                          f"\033[96mVersion Info: {banner}\033[0m")
-            except socket.error:
-                with PRINT_LOCK:
-                    print(f"\033[92m[+] Port {port} is OPEN\033[0m")
+            open_ports.append(port) # Add the open port to our list
         sock.close()
     except socket.error:
         pass
@@ -77,7 +70,7 @@ def worker():
 # --- Main Program ---
 
 BANNER = r"""
- 
+
    _____                                  _________              
   /  _  \  __ ______________             /   _____/ ____   ____  
  /  /_\  \|  |  \_  __ \__  \    ______  \_____  \_/ __ \_/ ___\ 
@@ -87,7 +80,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("          Welcome to Aura-sec v1.0")
+print("          Welcome to Aura-sec v1.2")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
@@ -112,9 +105,26 @@ if scan_choice == '1':
 
     for thread in thread_list:
         thread.join()
-
+    
+    # --- Results and Save Logic ---
     print("-" * 50)
     print("[*] Scan complete.")
+    if open_ports:
+        print(f"[*] Found {len(open_ports)} open ports:")
+        for port in sorted(open_ports):
+            print(f"\033[92m[+] Port {port} is OPEN\033[0m")
+        
+        save_results = input("\nDo you want to save the results to a file? (y/n): ").lower()
+        if save_results == 'y':
+            filename = input("Enter filename to save (e.g., scan_results.txt): ")
+            with open(filename, 'w') as f:
+                f.write(f"Scan results for target: {TARGET_IP}\n")
+                f.write("-" * 50 + "\n")
+                for port in sorted(open_ports):
+                    f.write(f"Port {port} is OPEN\n")
+            print(f"[+] Results saved to {filename}")
+    else:
+        print("[*] No open ports found.")
 
 elif scan_choice == '2':
     print("\n[!] The Anonymous Scan feature is coming in a future version!")
@@ -123,5 +133,3 @@ else:
     print("\n[!] Invalid choice. Please run the program again and select 1 or 2.")
 
 print("\nThank you for using Aura-sec!")
-# --- End of main program ---
-# --- This code is designed to be simple and educational. ---
