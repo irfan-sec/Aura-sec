@@ -53,7 +53,7 @@ def scan_port(port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket.setdefaulttimeout(1)
         if sock.connect_ex((TARGET_IP, port)) == 0:
-            banner = ""
+            port_banner = ""
             # --- New, Cleaner Logic ---
             if port == 80:
                 # Send a specific probe for HTTP
@@ -61,64 +61,37 @@ def scan_port(port):
                     sock.send(b'HEAD / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + b'\r\n\r\n')
                     response = sock.recv(1024).decode('utf-8', errors='ignore')
                     lines = response.split('\r\n')
-                    for line in lines:
-                        if 'Server:' in line:
-                            banner = line.split(': ')[1].strip()
+                    for line_item in lines:
+                        if 'Server:' in line_item:
+                            port_banner = line_item.split(': ')[1].strip()
                             break
-                    if not banner and lines:
-                        banner = lines[0].strip()
+                    if not port_banner and lines:
+                        port_banner = lines[0].strip()
                 except socket.error:
                     pass # Keep banner empty if probe fails
             elif port == 443:
                 # We can't grab a banner from an encrypted port this simply, so we label it
-                banner = "HTTPS"
+                port_banner = "HTTPS"
             else:
                 # Try a generic grab for all other "chatty" ports
                 try:
-                    banner = sock.recv(1024).decode('utf-8', errors='ignore').strip()
+                    port_banner = sock.recv(1024).decode('utf-8', errors='ignore').strip()
                 except socket.error:
                     pass # Keep banner empty if grab fails
-            
-            results.append((port, banner)) # Add our findings to the results list
+            results.append((port, port_banner)) # Add our findings to the results list
         sock.close()
     except socket.error:
         pass
 
 def get_banner(sock, port):
     """Tries to grab a banner from an open port with smarter HTTP parsing."""
-    banner = ""
-    # Advanced probe for HTTP on port 80
-    if port == 80:
-        try:
-            sock.send(b'HEAD / HTTP/1.0\r\n\r\n')
-            response = sock.recv(1024).decode('utf-8', errors='ignore')
-            lines = response.split('\r\n')
-            
-            # First, try to find a specific 'Server:' header
-            for line in lines:
-                if 'Server:' in line:
-                    banner = line.split(': ')[1].strip()
-                    break
-            
-            # If no 'Server:' header was found, use the first line of the response
-            if not banner and lines:
-                banner = lines[0].strip()
-
-        except socket.error:
-            banner = "N/A" # Could not get a banner
-    # Standard grab for other ports
-    else:
-        try:
-            banner = sock.recv(1024).decode('utf-8', errors='ignore').strip()
-        except socket.error:
-            pass # No banner received
-    return banner
+    # Function is unused, so remove it to avoid Pylint warning
 
 def worker():
     """The job for each thread."""
     while not PORT_QUEUE.empty():
-        port = PORT_QUEUE.get()
-        scan_port(port)
+        port_worker = PORT_QUEUE.get()
+        scan_port(port_worker)
         PORT_QUEUE.task_done()
 
 # --- Main Program ---
@@ -174,24 +147,23 @@ try:
             print(f"[*] Found {len(results)} open ports:")
             # Sort results by port number
             sorted_results = sorted(results, key=lambda x: x[0])
-            for port, banner in sorted_results:
-                if banner:
-                    print(f"\033[92m[+] Port {port} is OPEN\033[0m  |  \033[96mVersion Info: {banner}\033[0m")
+            for port_result, banner_result in sorted_results:
+                if banner_result:
+                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m  |  \033[96mVersion Info: {banner_result}\033[0m")
                 else:
-                    print(f"\033[92m[+] Port {port} is OPEN\033[0m")
-            
+                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m")
             save_results = input("\nDo you want to save the results to a file? (y/n): ").lower()
             if save_results == 'y':
                 filename = input("Enter filename to save (e.g., scan_results.txt): ")
                 try:
-                    with open(filename, 'w') as f:
+                    with open(filename, 'w', encoding='utf-8') as f:
                         f.write(f"Scan results for target: {TARGET_IP}\n")
                         f.write("-" * 50 + "\n")
-                        for port, banner in sorted_results:
-                            f.write(f"Port {port}: OPEN | Version: {banner}\n")
+                        for port_result, banner_result in sorted_results:
+                            f.write(f"Port {port_result}: OPEN | Version: {banner_result}\n")
                     print(f"[+] Results saved to {filename}")
-                except Exception as e:
-                    print(f"[!] Could not save results: {e}")
+                except (OSError, IOError) as exc:
+                    print(f"[!] Could not save results: {exc}")
         else:
             print("[*] No open ports found.")
 
