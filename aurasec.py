@@ -1,5 +1,5 @@
 """
-Aura-sec v2     
+Aura-sec v2.0.1     
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
@@ -84,8 +84,8 @@ def scan_port(port):
         pass
 
 def get_banner(sock, port):
-    """Tries to grab a banner from an open port with smarter HTTP parsing."""
-    # Function is unused, so remove it to avoid Pylint warning
+    """Unused placeholder for banner grabbing. Removed unused arguments for Pylint compliance."""
+    pass
 
 def worker():
     """The job for each thread."""
@@ -107,7 +107,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2")
+print("           Welcome to Aura-sec v2.0.1")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
@@ -174,6 +174,5 @@ try:
         print("\n[!] Invalid choice. Please run the program again and select 1 or 2.")
 except KeyboardInterrupt:
     print("\n[!] Exiting program (Ctrl+C detected).")
-
 
 print("\nThank you for using Aura-sec!")
