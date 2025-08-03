@@ -1,6 +1,7 @@
 """
-Aura-sec v1.3
+Aura-sec v2.0
 A unique and easy-to-use scanner for the community.
+Refactored for clarity, quality, and extensibility.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
 """
@@ -12,22 +13,74 @@ from queue import Queue
 TARGET_IP = ""
 PORT_QUEUE = Queue()
 PRINT_LOCK = threading.Lock()
-results = [] # A new list to store results (port and banner)
+results = []
 
-# --- Functions ---
-# main_menu, get_target, get_ports stay the same...
+# --- Banner Grabbing Helper Functions ---
+
+def get_http_banner(sock):
+    """Sends a specific probe for HTTP and parses the banner."""
+    try:
+        sock.send(b'HEAD / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + b'\r\n\r\n')
+        response = sock.recv(1024).decode('utf-8', errors='ignore')
+        lines = response.split('\r\n')
+        for line in lines:
+            if 'Server:' in line:
+                return line.split(': ')[1].strip()
+        # If no server header, return the first line
+        if lines:
+            return lines[0].strip()
+    except socket.error:
+        return "N/A"
+    return ""
+
+def get_generic_banner(sock):
+    """Tries a generic banner grab for non-HTTP services."""
+    try:
+        return sock.recv(1024).decode('utf-8', errors='ignore').strip()
+    except socket.error:
+        return ""
+
+# --- Core Scanner Functions ---
+
+def scan_port(port):
+    """Connects to a port and dispatches to the correct banner grabber."""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        if sock.connect_ex((TARGET_IP, port)) == 0:
+            banner = ""
+            if port == 80:
+                banner = get_http_banner(sock)
+            elif port == 443:
+                banner = "HTTPS"
+            else:
+                banner = get_generic_banner(sock)
+            
+            with PRINT_LOCK:
+                results.append((port, banner))
+        sock.close()
+    except socket.error:
+        pass
+
+def worker():
+    """The job for each thread."""
+    while not PORT_QUEUE.empty():
+        port = PORT_QUEUE.get()
+        scan_port(port)
+        PORT_QUEUE.task_done()
+
+# --- UI and Main Logic Functions ---
+
 def main_menu():
     """Displays the main menu and gets the user's choice."""
     print("\nPlease select the type of scan:")
     print("1. Normal Scan")
     print("2. Anonymous Scan (Coming Soon!)")
-    choice = input("Enter your choice (1 or 2): ")
-    return choice
+    return input("Enter your choice (1 or 2): ")
 
 def get_target():
     """Gets the target IP address from the user."""
-    target = input("Please enter the target IP address: ")
-    return target
+    return input("Please enter the target IP address: ")
 
 def get_ports():
     """Gets the port scanning option and range from the user."""
@@ -47,56 +100,39 @@ def get_ports():
         else:
             print("[!] Invalid choice. Please enter 1 or 2.")
 
-def scan_port(port):
-    """Scans a single port and grabs a banner if possible using appropriate probes."""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket.setdefaulttimeout(1)
-        if sock.connect_ex((TARGET_IP, port)) == 0:
-            port_banner = ""
-            # --- New, Cleaner Logic ---
-            if port == 80:
-                # Send a specific probe for HTTP
-                try:
-                    sock.send(b'HEAD / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + b'\r\n\r\n')
-                    response = sock.recv(1024).decode('utf-8', errors='ignore')
-                    lines = response.split('\r\n')
-                    for line_item in lines:
-                        if 'Server:' in line_item:
-                            port_banner = line_item.split(': ')[1].strip()
-                            break
-                    if not port_banner and lines:
-                        port_banner = lines[0].strip()
-                except socket.error:
-                    pass # Keep banner empty if probe fails
-            elif port == 443:
-                # We can't grab a banner from an encrypted port this simply, so we label it
-                port_banner = "HTTPS"
+def display_results_and_save():
+    """Prints results to the screen and handles saving to a file."""
+    print("-" * 50)
+    print("[*] Scan complete.")
+    if results:
+        print(f"[*] Found {len(results)} open ports:")
+        sorted_results = sorted(results, key=lambda x: x[0])
+        for port, banner in sorted_results:
+            if banner:
+                print(f"\033[92m[+] Port {port} is OPEN\033[0m  |  "
+                      f"\033[96mVersion Info: {banner}\033[0m")
             else:
-                # Try a generic grab for all other "chatty" ports
-                try:
-                    port_banner = sock.recv(1024).decode('utf-8', errors='ignore').strip()
-                except socket.error:
-                    pass # Keep banner empty if grab fails
-            results.append((port, port_banner)) # Add our findings to the results list
-        sock.close()
-    except socket.error:
-        pass
+                print(f"\033[92m[+] Port {port} is OPEN\033[0m")
+        
+        save = input("\nDo you want to save the results to a file? (y/n): ").lower()
+        if save == 'y':
+            filename = input("Enter filename (e.g., scan_results.txt): ")
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(f"Scan results for target: {TARGET_IP}\n")
+                    f.write("-" * 50 + "\n")
+                    for port, banner in sorted_results:
+                        f.write(f"Port {port}: OPEN | Version: {banner}\n")
+                print(f"[+] Results saved to {filename}")
+            except IOError as e:
+                print(f"[!] Could not save results: {e}")
+    else:
+        print("[*] No open ports found.")
 
-def get_banner(sock, port):
-    """Tries to grab a banner from an open port with smarter HTTP parsing."""
-    # Function is unused, so remove it to avoid Pylint warning
-
-def worker():
-    """The job for each thread."""
-    while not PORT_QUEUE.empty():
-        port_worker = PORT_QUEUE.get()
-        scan_port(port_worker)
-        PORT_QUEUE.task_done()
-
-# --- Main Program ---
-# ... (BANNER and welcome message stay the same) ...
-BANNER = r"""
+def main():
+    """Main function to run the scanner."""
+    global TARGET_IP # pylint: disable=global-statement
+    BANNER = r"""
 
    _____                                  _________              
   /  _  \  __ ______________             /   _____/ ____   ____  
@@ -105,75 +141,42 @@ BANNER = r"""
 \____|__  /____/ |__|  (____  /         /_______  /\___  >\___  >
         \/                  \/                  \/     \/     \/ 
 
-"""
-print(BANNER)
-print("           Welcome to Aura-sec v1.3")
-print("           A scanner by I R F A N")
-print("     GitHub: https://github.com/irfan-sec")
-print("-" * 50)
+    """
+    print(BANNER)
+    print("           Welcome to Aura-sec v2.0")
+    print("           A scanner by I R F A N")
+    print("     GitHub: https://github.com/irfan-sec")
+    print("-" * 50)
 
+    try:
+        scan_choice = main_menu()
+        if scan_choice == '1':
+            TARGET_IP = get_target()
+            port_range = get_ports()
+            print(f"\n[*] Starting Scan on target: {TARGET_IP}...")
+            
+            for p in port_range:
+                PORT_QUEUE.put(p)
+            
+            num_threads = 100
+            thread_list = []
+            for _ in range(num_threads):
+                thread = threading.Thread(target=worker)
+                thread_list.append(thread)
+                thread.start()
+            
+            PORT_QUEUE.join()
+            
+            display_results_and_save()
 
-try:
-    scan_choice = main_menu()
-
-    if scan_choice == '1':
-        TARGET_IP = get_target()
-        port_range = get_ports()
-        
-        print(f"\n[*] Starting Scan on target: {TARGET_IP}...")
-        
-        for p in port_range:
-            PORT_QUEUE.put(p)
-
-        try:
-            NUM_THREADS = int(input("Enter number of threads (default 100): ") or "100")
-            if NUM_THREADS < 1:
-                NUM_THREADS = 100
-        except ValueError:
-            NUM_THREADS = 100
-
-        thread_list = []
-        for _ in range(NUM_THREADS):
-            thread = threading.Thread(target=worker)
-            thread_list.append(thread)
-            thread.start()
-
-        PORT_QUEUE.join()
-
-        # --- New Results and Save Logic ---
-        print("-" * 50)
-        print("[*] Scan complete.")
-        if results:
-            print(f"[*] Found {len(results)} open ports:")
-            # Sort results by port number
-            sorted_results = sorted(results, key=lambda x: x[0])
-            for port_result, banner_result in sorted_results:
-                if banner_result:
-                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m  |  \033[96mVersion Info: {banner_result}\033[0m")
-                else:
-                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m")
-            save_results = input("\nDo you want to save the results to a file? (y/n): ").lower()
-            if save_results == 'y':
-                filename = input("Enter filename to save (e.g., scan_results.txt): ")
-                try:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(f"Scan results for target: {TARGET_IP}\n")
-                        f.write("-" * 50 + "\n")
-                        for port_result, banner_result in sorted_results:
-                            f.write(f"Port {port_result}: OPEN | Version: {banner_result}\n")
-                    print(f"[+] Results saved to {filename}")
-                except (OSError, IOError) as exc:
-                    print(f"[!] Could not save results: {exc}")
+        elif scan_choice == '2':
+            print("\n[!] The Anonymous Scan feature is coming in a future version!")
         else:
-            print("[*] No open ports found.")
+            print("\n[!] Invalid choice. Please run the program again.")
+    except KeyboardInterrupt:
+        print("\n[!] Exiting program (Ctrl+C detected).")
+    
+    print("\nThank you for using Aura-sec!")
 
-    elif scan_choice == '2':
-        print("\n[!] The Anonymous Scan feature is coming in a future version!")
-        print("    We will build this in Phase 2 using a proxy like Tor.")
-    else:
-        print("\n[!] Invalid choice. Please run the program again and select 1 or 2.")
-except KeyboardInterrupt:
-    print("\n[!] Exiting program (Ctrl+C detected).")
-
-
-print("\nThank you for using Aura-sec!")
+if __name__ == "__main__":
+    main()
