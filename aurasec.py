@@ -1,5 +1,5 @@
 """
-Aura-sec v2.1 
+Aura-sec v2.1.1 
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
@@ -36,8 +36,8 @@ def get_target():
             return target_ip
         except socket.gaierror:
             # If it fails, it's an invalid hostname or IP
-            print("[!] Error: Could not resolve '{}'. "
-                  "Please check the name and your connection.".format(target_input))
+            print(f"[!] Error: Could not resolve '{target_input}'. "
+                  "Please check the name and your connection.")
 
 def get_custom_port_range():
     """Gets custom port range from user input."""
@@ -132,7 +132,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.1")
+print("           Welcome to Aura-sec v2.1.1")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
