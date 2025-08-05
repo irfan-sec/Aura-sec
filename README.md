@@ -43,20 +43,15 @@ The tool will then guide you through an interactive menu to select your scan typ
 Example
 $ python3 aurasec.py
 --------------------------------------------------
-    _____                                  _________              
-  /  _  \  __ ______________             /   _____/ ____   ____  
- /  /_\  \|  |  \_  __ \__  \    ______  \_____  \_/ __ \_/ ___\ 
-/    |    \  |  /|  | \// __ \_ /_____/  /        \  ___/\  \___ 
-\____|__  /____/ |__|  (____  /         /_______  /\___  >\___  >
-        \/                  \/                  \/     \/     \/
+welcome to Aura-sec 2.1.1 
+scanner by I R F A N
 --------------------------------------------------
-
 Please select the type of scan:
 1. Normal Scan
 2. Anonymous Scan (Coming Soon!)
 Enter your choice (1 or 2): 1
 
-Please enter the target IP address: 10.129.95.232
+Please enter the target host name or IP address: 10.129.95.232
 
 Select port range:
 1. Common Ports (1-1024)
