@@ -1,5 +1,5 @@
 """
-Aura-sec v2.0.2   
+Aura-sec v2.1 
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
@@ -25,9 +25,18 @@ def main_menu():
     return choice
 
 def get_target():
-    """Gets the target IP address from the user."""
-    target = input("Please enter the target IP address: ")
-    return target
+    """Gets the target from the user and resolves it to an IP address."""
+    while True:
+        target_input = input("Please enter the target IP address or hostname: ")
+        try:
+            # Try to resolve the hostname to an IP address.
+            # If an IP is entered, it will return the IP itself.
+            target_ip = socket.gethostbyname(target_input)
+            print(f"\n[*] Resolving '{target_input}' to {target_ip}")
+            return target_ip
+        except socket.gaierror:
+            # If it fails, it's an invalid hostname or IP
+            print(f"[!] Error: Could not resolve '{target_input}'. Please check the name and your connection.")
 
 def get_custom_port_range():
     """Gets custom port range from user input."""
@@ -122,7 +131,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.0.2")
+print("           Welcome to Aura-sec v2.1")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
