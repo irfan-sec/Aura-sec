@@ -36,7 +36,8 @@ def get_target():
             return target_ip
         except socket.gaierror:
             # If it fails, it's an invalid hostname or IP
-            print(f"[!] Error: Could not resolve '{target_input}'. Please check the name and your connection.")
+            print("[!] Error: Could not resolve '{}'. "
+                  "Please check the name and your connection.".format(target_input))
 
 def get_custom_port_range():
     """Gets custom port range from user input."""
