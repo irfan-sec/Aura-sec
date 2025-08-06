@@ -4,6 +4,7 @@ A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
 """
+import sys
 import socket
 import threading
 from queue import Queue
@@ -12,7 +13,7 @@ try:
     import socks
 except ImportError:
     print("[!] PySocks not found. Please install it using: pip install PySocks")
-    exit(1)
+    sys.exit(1)  # Use sys.exit instead of exit
 
 # --- Global variables ---
 TARGET_IP = ""
@@ -233,7 +234,7 @@ try:
                     PORT_QUEUE.put(p)
 
                 # Using fewer threads is generally better and safer for the Tor network
-                NUM_THREADS = 20 
+                NUM_THREADS = 20
                 print(f"[*] Using {NUM_THREADS} threads for anonymous scan.")
 
                 thread_list = []
