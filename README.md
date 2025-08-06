@@ -1,31 +1,36 @@
 # Aura-sec 🛡️
 
-![Version](https://img.shields.io/badge/version-v2.2blue)
+![Version](https://img.shields.io/badge/version-v2.2-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A simple, unique, and extensible network port scanner designed for the cybersecurity community. This project is a learning tool built to understand the fundamentals of network reconnaissance.
+A unique and easy-to-use network port scanner designed for the cybersecurity community. This project is a learning tool built to understand the fundamentals of network reconnaissance, multi-threading, and operational security.
 
 ---
 
 ## Key Features
 
 * **Interactive Menu:** Easy-to-use command-line interface.
-* **Normal Scan Mode:** For standard network reconnaissance.
-* **Port Range Selection:** Scan all common ports or specify a custom range.
-* **Banner Grabbing:** Identifies the service and version running on open ports.
-* **Anonymous Scan Mode:** Route scans through a proxy like Tor for OpSec. *(Planned for future release)*
+* **Multi-threaded Scanning:** High-speed scanning using multiple threads.
+* **Normal & Anonymous Modes:** Choose between a direct scan or an anonymous scan routed through the Tor network.
+* **Port Range Selection:** Scan common ports or specify a custom range.
+* **Hostname Resolution:** Accepts IP addresses or hostnames (e.g., `google.com`) as a target.
+* **File Output:** Save your scan results to a text file for reporting.
 
 ## Installation
 
-Currently, the tool can be run directly from the source code. You will need Python 3.
+Aura-sec requires Python 3 and the `PySocks` library.
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/irfan-sec/Aura-sec.git
+    git clone [https://github.com/irfan-sec/Aura-sec.git](https://github.com/irfan-sec/Aura-sec.git)
     ```
 2.  Navigate to the project directory:
     ```bash
     cd Aura-sec
+    ```
+3.  Install the required dependencies:
+    ```bash
+    pip install -r requirements.txt
     ```
 
 ## Usage
@@ -34,28 +39,50 @@ Run the main script from your terminal:
 
 ```bash
 python3 aurasec.py
+````
+
+The tool will guide you through an interactive menu to select your scan type, target, and port range. For Anonymous Scans, ensure the Tor service is running on your machine.
+
+### Example Session
+
 ```
----
-
-## HELP
-The tool will then guide you through an interactive menu to select your scan type, target, and port range.
-
-Example
 $ python3 aurasec.py
+
+   _____                                  _________              
+  /  _  \  __ ______________             /   _____/ ____   ____  
+ /  /_\  \|  |  \_  __ \__  \    ______  \_____  \_/ __ \_/ ___\ 
+/    |    \  |  /|  | \// __ \_ /_____/  /        \  ___/\  \___ 
+\____|__  /____/ |__|  (____  /         /_______  /\___  >\___  >
+        \/                  \/                  \/     \/     \/ 
+
+            Welcome to Aura-sec v2.2
+           A scanner by I R F A N
+     GitHub: [https://github.com/irfan-sec](https://github.com/irfan-sec)
 --------------------------------------------------
-welcome to Aura-sec 2.1.1 
-scanner by I R F A N
---------------------------------------------------
+
 Please select the type of scan:
 1. Normal Scan
-2. Anonymous Scan (Coming Soon!)
+2. Anonymous Scan (via Tor)
 Enter your choice (1 or 2): 1
 
-Please enter the target host name or IP address: 10.129.95.232
+Please enter the target IP address or hostname: scanme.nmap.org
+```
 
-Select port range:
-1. Common Ports (1-1024)
-2. Custom Range
-Enter choice (1 or 2): 1
+-----
 
--------------------
+## Project Roadmap
+
+  - [x] Core multi-threaded scanning engine
+  - [x] User-friendly interactive menu
+  - [x] Hostname resolution
+  - [x] Save results to file
+  - [x] Basic Tor integration for anonymous scans
+  - [ ] Add banner grabbing for more services
+  - [ ] Add UDP scan functionality
+  - [ ] Improve output formatting
+
+## Contributing
+
+This is a personal learning project, but suggestions and feedback are always welcome. Please feel free to open an issue or submit a pull request.
+
+```
