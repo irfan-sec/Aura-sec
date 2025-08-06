@@ -1,13 +1,18 @@
 """
-Aura-sec v2.2 
+Aura-sec v2.2.1
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
 """
 import socket
 import threading
-import socks 
 from queue import Queue
+
+try:
+    import socks
+except ImportError:
+    print("[!] PySocks not found. Please install it using: pip install PySocks")
+    exit(1)
 
 # --- Global variables ---
 TARGET_IP = ""
@@ -175,7 +180,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.2")
+print("           Welcome to Aura-sec v2.2.1")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
