@@ -1,11 +1,12 @@
 """
-Aura-sec v2.1.1 
+Aura-sec v2.2 
 A unique and easy-to-use scanner for the community.
 Coded by I R F A N
 GitHub: https://github.com/irfan-sec
 """
 import socket
 import threading
+import socks 
 from queue import Queue
 
 # --- Global variables ---
@@ -20,7 +21,7 @@ def main_menu():
     """Displays the main menu and gets the user's choice."""
     print("\nPlease select the type of scan:")
     print("1. Normal Scan")
-    print("2. Anonymous Scan (Coming Soon!)")
+    print("2. Anonymous Scan")
     choice = input("Enter your choice (1 or 2): ")
     return choice
 
@@ -112,12 +113,54 @@ def get_banner():
     """Unused placeholder for banner grabbing."""
     # Function intentionally left blank for future use
 
+def check_tor_proxy():
+    """Checks if the Tor SOCKS proxy is running on the default port 9050."""
+    try:
+        proxy_check = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        proxy_check.settimeout(1)
+        # Try to connect to the local Tor proxy
+        if proxy_check.connect_ex(('127.0.0.1', 9050)) == 0:
+            proxy_check.close()
+            return True
+        proxy_check.close()
+        return False
+    except socket.error:
+        return False
+
 def worker():
     """The job for each thread."""
     while not PORT_QUEUE.empty():
         port_worker = PORT_QUEUE.get()
         scan_port(port_worker)
         PORT_QUEUE.task_done()
+
+def display_results_and_save():
+    """Display scan results and handle saving to file."""
+    print("-" * 50)
+    print("[*] Scan complete.")
+    if results:
+        print(f"[*] Found {len(results)} open ports:")
+        sorted_results = sorted(results, key=lambda x: x[0])
+        for port_result, banner_result in sorted_results:
+            if banner_result:
+                print(f"\033[92m[+] Port {port_result} is OPEN\033[0m  |  "
+                      f"\033[96mVersion Info: {banner_result}\033[0m")
+            else:
+                print(f"\033[92m[+] Port {port_result} is OPEN\033[0m")
+        save_results = input("\nDo you want to save the results to a file? (y/n): ").lower()
+        if save_results == 'y':
+            filename = input("Enter filename to save (e.g., scan_results.txt): ")
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(f"Scan results for target: {TARGET_IP}\n")
+                    f.write("-" * 50 + "\n")
+                    for port_result, banner_result in sorted_results:
+                        f.write(f"Port {port_result}: OPEN | Version: {banner_result}\n")
+                print(f"[+] Results saved to {filename}")
+            except (OSError, IOError) as exc:
+                print(f"[!] Could not save results: {exc}")
+    else:
+        print("[*] No open ports found.")
 
 # --- Main Program ---
 # ... (BANNER and welcome message stay the same) ...
@@ -132,7 +175,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.1.1")
+print("           Welcome to Aura-sec v2.2")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
@@ -163,37 +206,45 @@ try:
 
         PORT_QUEUE.join()
 
-        # --- New Results and Save Logic ---
-        print("-" * 50)
-        print("[*] Scan complete.")
-        if results:
-            print(f"[*] Found {len(results)} open ports:")
-            # Sort results by port number
-            sorted_results = sorted(results, key=lambda x: x[0])
-            for port_result, banner_result in sorted_results:
-                if banner_result:
-                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m  |  "
-                          f"\033[96mVersion Info: {banner_result}\033[0m")
-                else:
-                    print(f"\033[92m[+] Port {port_result} is OPEN\033[0m")
-            save_results = input("\nDo you want to save the results to a file? (y/n): ").lower()
-            if save_results == 'y':
-                filename = input("Enter filename to save (e.g., scan_results.txt): ")
-                try:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(f"Scan results for target: {TARGET_IP}\n")
-                        f.write("-" * 50 + "\n")
-                        for port_result, banner_result in sorted_results:
-                            f.write(f"Port {port_result}: OPEN | Version: {banner_result}\n")
-                    print(f"[+] Results saved to {filename}")
-                except (OSError, IOError) as exc:
-                    print(f"[!] Could not save results: {exc}")
-        else:
-            print("[*] No open ports found.")
+        display_results_and_save()
 
     elif scan_choice == '2':
-        print("\n[!] The Anonymous Scan feature is coming in a future version!")
-        print("    We will build this in Phase 2 using a proxy like Tor.")
+        print("\n[*] Checking for Tor SOCKS proxy on 127.0.0.1:9050...")
+        if check_tor_proxy():
+            print("[+] Tor proxy found! Configuring scanner to use Tor...")
+
+            # --- This is the magic that makes the scan anonymous ---
+            socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 9050)
+            socket.socket = socks.socksocket
+            print("[+] Scanner is now anonymized. All traffic will go through Tor.")
+            # --- End of magic ---
+
+            # Now, we re-use the same logic from your normal scan
+            TARGET_IP = get_target()
+            port_range = get_ports()
+            if port_range:
+                print(f"\n[*] Starting ANONYMOUS Scan on target: {TARGET_IP}...")
+                for p in port_range:
+                    PORT_QUEUE.put(p)
+
+                # Using fewer threads is generally better and safer for the Tor network
+                NUM_THREADS = 20 
+                print(f"[*] Using {NUM_THREADS} threads for anonymous scan.")
+
+                thread_list = []
+                for _ in range(NUM_THREADS):
+                    thread = threading.Thread(target=worker)
+                    thread_list.append(thread)
+                    thread.start()
+
+                PORT_QUEUE.join()
+
+                # This calls your existing results and save logic
+                display_results_and_save()
+
+        else:
+            print("\n[!] Error: Tor SOCKS proxy not found.")
+            print("    Please ensure the Tor service (tor.exe or Linux service) is running.")
     else:
         print("\n[!] Invalid choice. Please run the program again and select 1 or 2.")
 except KeyboardInterrupt:

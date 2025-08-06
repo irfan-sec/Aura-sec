@@ -1,6 +1,6 @@
 # Aura-sec 🛡️
 
-![Version](https://img.shields.io/badge/version-v2.1-blue)
+![Version](https://img.shields.io/badge/version-v2.2blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A simple, unique, and extensible network port scanner designed for the cybersecurity community. This project is a learning tool built to understand the fundamentals of network reconnaissance.
