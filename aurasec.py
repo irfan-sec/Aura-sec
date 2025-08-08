@@ -195,7 +195,6 @@ try:
         TARGET_IP = get_target()
         port_range = get_ports()
         print(f"\n[*] Starting Scan on target: {TARGET_IP}...")
-        
         # Convert range to list to get the total count for the progress bar
         ports_to_scan = list(port_range)
         for p in ports_to_scan:
