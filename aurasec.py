@@ -1,4 +1,3 @@
-
 """
 Aura-sec v2.3
 A unique and easy-to-use scanner for the community.
