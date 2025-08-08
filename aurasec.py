@@ -1,24 +1,24 @@
 """
-Aura-sec v2.2.1
+Aura-sec v2.3
 A unique and easy-to-use scanner for the community.
-Coded by I R F A N
-GitHub: https://github.com/irfan-sec
 """
 import sys
 import socket
 import threading
 from queue import Queue
+from tqdm import tqdm
 
 try:
     import socks
 except ImportError:
     print("[!] PySocks not found. Please install it using: pip install PySocks")
-    sys.exit(1)  # Use sys.exit instead of exit
+    sys.exit(1)
 
 # --- Global variables ---
 TARGET_IP = ""
 PORT_QUEUE = Queue()
 PRINT_LOCK = threading.Lock()
+NUM_THREADS = 100  # Default number of threads for normal scanning
 results = [] # A new list to store results (port and banner)
 
 # --- Functions ---
@@ -181,7 +181,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.2.1")
+print("           Welcome to Aura-sec v2.3")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
@@ -194,23 +194,36 @@ try:
         TARGET_IP = get_target()
         port_range = get_ports()
         print(f"\n[*] Starting Scan on target: {TARGET_IP}...")
-        for p in port_range:
+        
+        # Convert range to list to get the total count for the progress bar
+        ports_to_scan = list(port_range)
+        for p in ports_to_scan:
             PORT_QUEUE.put(p)
 
-        try:
-            NUM_THREADS = int(input("Enter number of threads (default 100): ") or "100")
-            if NUM_THREADS < 1:
-                NUM_THREADS = 100
-        except ValueError:
-            NUM_THREADS = 100
+        # Setup the progress bar object
+        pbar = tqdm(total=len(ports_to_scan), desc="Scanning Ports")
 
+        # This is a new worker function defined inside main that can see the pbar
+        def worker_with_progress():
+            """Worker that also updates the progress bar."""
+            while not PORT_QUEUE.empty():
+                port_worker = PORT_QUEUE.get()
+                scan_port(port_worker)
+                PORT_QUEUE.task_done()
+                pbar.update(1)
+
+        # Create and start the threads with the new worker function
         thread_list = []
         for _ in range(NUM_THREADS):
-            thread = threading.Thread(target=worker)
+            thread = threading.Thread(target=worker_with_progress)
             thread_list.append(thread)
             thread.start()
 
+        # Wait for all ports in the queue to be processed
         PORT_QUEUE.join()
+
+        # Close the progress bar cleanly after the scan is done
+        pbar.close()
 
         display_results_and_save()
 

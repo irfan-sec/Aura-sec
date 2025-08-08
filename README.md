@@ -1,6 +1,6 @@
 # Aura-sec 🛡️
 
-![Version](https://img.shields.io/badge/version-v2.2-blue)
+![Version](https://img.shields.io/badge/version-v2.3-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A unique and easy-to-use network port scanner designed for the cybersecurity community. This project is a learning tool built to understand the fundamentals of network reconnaissance, multi-threading, and operational security.
@@ -22,8 +22,7 @@ Aura-sec requires Python 3 and the `PySocks` library.
 
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/irfan-sec/Aura-sec.git](https://github.com/irfan-sec/Aura-sec.git)
-    ```
+    git clone https://github.com/irfan-sec/Aura-sec.git
 2.  Navigate to the project directory:
     ```bash
     cd Aura-sec
@@ -55,7 +54,7 @@ $ python3 aurasec.py
 \____|__  /____/ |__|  (____  /         /_______  /\___  >\___  >
         \/                  \/                  \/     \/     \/ 
 
-            Welcome to Aura-sec v2.2
+            Welcome to Aura-sec v2.3
            A scanner by I R F A N
      GitHub: [https://github.com/irfan-sec](https://github.com/irfan-sec)
 --------------------------------------------------
@@ -85,4 +84,3 @@ Please enter the target IP address or hostname: scanme.nmap.org
 
 This is a personal learning project, but suggestions and feedback are always welcome. Please feel free to open an issue or submit a pull request.
 
-```
