@@ -1,12 +1,12 @@
 """
-Aura-sec v2.4.1
+Aura-sec v2.4.2
 A unique and easy-to-use scanner for the community.
 """
 import sys
 import socket
 import threading
 from queue import Queue
-import ftplib  # <-- Move this above tqdm
+import ftplib # For FTP anonymous login check
 from tqdm import tqdm
 
 try:
@@ -203,7 +203,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.4.1")
+print("           Welcome to Aura-sec v2.4.2")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
