@@ -1,6 +1,6 @@
 # Aura-sec 🛡️
 
-![Version](https://img.shields.io/badge/version-v2.3-blue)
+![Version](https://img.shields.io/badge/version-v2.4.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 A unique and easy-to-use network port scanner designed for the cybersecurity community. This project is a learning tool built to understand the fundamentals of network reconnaissance, multi-threading, and operational security.
@@ -54,7 +54,7 @@ $ python3 aurasec.py
 \____|__  /____/ |__|  (____  /         /_______  /\___  >\___  >
         \/                  \/                  \/     \/     \/ 
 
-            Welcome to Aura-sec v2.3
+            Welcome to Aura-sec v2.4.1
            A scanner by I R F A N
      GitHub: [https://github.com/irfan-sec](https://github.com/irfan-sec)
 --------------------------------------------------
