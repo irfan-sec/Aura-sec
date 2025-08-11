@@ -1,13 +1,13 @@
 """
-Aura-sec v2.4
+Aura-sec v2.4.1
 A unique and easy-to-use scanner for the community.
 """
 import sys
 import socket
 import threading
 from queue import Queue
+import ftplib  # <-- Move this above tqdm
 from tqdm import tqdm
-import ftplib
 
 try:
     import socks
@@ -179,17 +179,11 @@ def display_results_and_save():
 def check_ftp_anonymous(ip_address):
     """Tries to log in to an FTP server at the given IP anonymously."""
     try:
-        # Create an FTP object and try to connect (with a short timeout)
         ftp = ftplib.FTP(ip_address, timeout=2)
-
-        # Try to log in with username 'anonymous' and a blank password
         ftp.login('anonymous', '')
-
-        # If we get this far without an error, the login was successful!
         ftp.quit()
         return True
-    except Exception:
-        # If any error occurs (connection refused, login failed, etc.), it's not vulnerable.
+    except ftplib.all_errors:  # <-- Use specific FTP exception
         return False
 
 # --- Main Program ---
@@ -209,7 +203,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.4")
+print("           Welcome to Aura-sec v2.4.1")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
