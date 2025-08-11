@@ -1,5 +1,5 @@
 """
-Aura-sec v2.3
+Aura-sec v2.4
 A unique and easy-to-use scanner for the community.
 """
 import sys
@@ -7,6 +7,7 @@ import socket
 import threading
 from queue import Queue
 from tqdm import tqdm
+import ftplib
 
 try:
     import socks
@@ -95,11 +96,18 @@ def get_generic_banner(sock):
     return ""
 
 def handle_port_connection(sock, port):
-    """Handle the connection to a port and return the banner if available."""
+    """Handle the connection and dispatch to the correct banner/vulnerability check."""
     if port == 80:
         return get_http_banner(sock)
     if port == 443:
         return "HTTPS"
+    if port == 21:
+        # If the port is FTP, run our vulnerability check
+        if check_ftp_anonymous(TARGET_IP):
+            return "VULNERABLE: Anonymous FTP Login Enabled!"
+        return get_generic_banner(sock)  # Otherwise, just get the normal banner
+
+    # For all other ports, do a generic banner grab
     return get_generic_banner(sock)
 
 def scan_port(port):
@@ -168,6 +176,22 @@ def display_results_and_save():
     else:
         print("[*] No open ports found.")
 
+def check_ftp_anonymous(ip_address):
+    """Tries to log in to an FTP server at the given IP anonymously."""
+    try:
+        # Create an FTP object and try to connect (with a short timeout)
+        ftp = ftplib.FTP(ip_address, timeout=2)
+
+        # Try to log in with username 'anonymous' and a blank password
+        ftp.login('anonymous', '')
+
+        # If we get this far without an error, the login was successful!
+        ftp.quit()
+        return True
+    except Exception:
+        # If any error occurs (connection refused, login failed, etc.), it's not vulnerable.
+        return False
+
 # --- Main Program ---
 # ... (BANNER and welcome message stay the same) ...
 BANNER = r"""
@@ -185,7 +209,7 @@ BANNER = r"""
 
 """
 print(BANNER)
-print("           Welcome to Aura-sec v2.3")
+print("           Welcome to Aura-sec v2.4")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
