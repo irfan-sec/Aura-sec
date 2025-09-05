@@ -101,7 +101,7 @@ def configure_shodan():
 
 def get_stealth_options():
     """Configure stealth scan options."""
-    global STEALTH_MODE, SCAN_DELAY, NUM_THREADS
+    global STEALTH_MODE, SCAN_DELAY, NUM_THREADS  # pylint: disable=global-statement
 
     STEALTH_MODE = True
     print("\n[*] Configuring stealth scan options...")
@@ -214,7 +214,7 @@ def analyze_ssl_certificate(ip, ssl_port=443):
                     cert_info['vulnerabilities'] = vulnerabilities
                     return cert_info
 
-    except Exception:
+    except (ssl.SSLError, socket.error, ValueError):
         pass
     return None
 
@@ -246,7 +246,7 @@ def get_ports():
 def get_http_banner(sock):
     """Get banner from HTTP port with enhanced web technology detection."""
     try:
-        http_request = (b'GET / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + 
+        http_request = (b'GET / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() +
                        b'\r\nUser-Agent: Aura-sec/2.5.0\r\n\r\n')
         sock.send(http_request)
         response = sock.recv(4096).decode('utf-8', errors='ignore')
@@ -338,6 +338,7 @@ def check_ftp_anonymous(ip_address):
     except ftplib.all_errors:
         return False
 
+# pylint: disable=too-many-return-statements
 def handle_port_connection(sock, conn_port):
     """Handle the connection and dispatch to the correct banner/vulnerability check."""
     if conn_port == 80:
@@ -357,7 +358,7 @@ def handle_port_connection(sock, conn_port):
         service_name = SERVICE_SIGNATURES[conn_port]["name"]
         banner = get_generic_banner(sock)
         return f"{service_name} - {banner}" if banner else service_name
-    
+
     # For all other ports, do a generic banner grab
     banner = get_generic_banner(sock)
     return banner if banner else "Unknown service"
@@ -517,6 +518,7 @@ def save_results_csv(filename, sorted_results, _scan_stats):  # Rename to _scan_
         for port_result, banner_result in sorted_results:
             writer.writerow([port_result, 'OPEN', banner_result, banner_result])
 
+# pylint: disable=too-many-branches,too-many-statements
 def display_results_and_save():
     """Display scan results and handle saving to file."""
     scan_stats = get_scan_statistics()
@@ -594,15 +596,15 @@ def display_results_and_save():
 BANNER = r"""
 
 
-   ('-.                 _  .-')     ('-.               .-')      ('-.              
-  ( OO ).-.            ( \( -O )   ( OO ).-.          ( OO ).  _(  OO)             
-  / . --. / ,--. ,--.   ,------.   / . --. /         (_)---\_)(,------.   .-----.  
-  | \-.  \  |  | |  |   |   /`. '  | \-.  \    .-')  /    _ |  |  .---'  '  .--./  
-.-'-'  |  | |  | | .-') |  /  | |.-'-'  |  | _(  OO) \  :` `.  |  |      |  |('-.  
- \| |_.'  | |  |_|( OO )|  |_.' | \| |_.'  |(,------. '..`''.)(|  '--.  /_) |OO  ) 
-  |  .-.  | |  | | `-' /|  .  '.'  |  .-.  | '------'.-._)   \ |  .--'  ||  |`-'|  
-  |  | |  |('  '-'(_.-' |  |\  \   |  | |  |         \       / |  `---.(_'  '--'\  
-  `--' `--'  `-----'    `--' '--'  `--' `--'          `-----'  `------'   `-----'  
+   ('-.                 _  .-')     ('-.               .-')      ('-.
+  ( OO ).-.            ( \( -O )   ( OO ).-.          ( OO ).  _(  OO)
+  / . --. / ,--. ,--.   ,------.   / . --. /         (_)---\_)(,------.   .-----.
+  | \-.  \  |  | |  |   |   /`. '  | \-.  \    .-')  /    _ |  |  .---'  '  .--./
+.-'-'  |  | |  | | .-') |  /  | |.-'-'  |  | _(  OO) \  :` `.  |  |      |  |('-.
+ \| |_.'  | |  |_|( OO )|  |_.' | \| |_.'  |(,------. '..`''.)(|  '--.  /_) |OO  )
+  |  .-.  | |  | | `-' /|  .  '.'  |  .-.  | '------'.-._)   \ |  .--'  ||  |`-'|
+  |  | |  |('  '-'(_.-' |  |\  \   |  | |  |         \       / |  `---.(_'  '--'\
+  `--' `--'  `-----'    `--' '--'  `--' `--'          `-----'  `------'   `-----'
 
 """
 
