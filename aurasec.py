@@ -131,7 +131,8 @@ def get_target():
             return target_ip
         except socket.gaierror:
             # If it fails, it's an invalid hostname or IP
-            print(f"[!] Error: Could not resolve '{target_input}'. Please check the name and your connection.")
+            print(f"[!] Error: Could not resolve '{target_input}'. "
+                  "Please check the name and your connection.")
 
 def query_shodan(ip):
     """Query Shodan API for additional information about the target."""
@@ -285,7 +286,7 @@ def get_http_banner(sock):
         pass
     return "HTTP"
 
-def get_https_banner(sock):
+def get_https_banner(_sock):  # Rename to _sock to indicate it's unused
     """Get banner from HTTPS port with SSL certificate analysis."""
     try:
         cert_info = analyze_ssl_certificate(TARGET_IP, 443)
@@ -295,7 +296,7 @@ def get_https_banner(sock):
                 result += f" [VULN: {', '.join(cert_info['vulnerabilities'])}]"
             return result
         return "HTTPS"
-    except Exception:
+    except (ssl.SSLError, socket.error):
         return "HTTPS"
 
 def get_ssh_banner(sock):
@@ -340,25 +341,25 @@ def handle_port_connection(sock, conn_port):
     """Handle the connection and dispatch to the correct banner/vulnerability check."""
     if conn_port == 80:
         return get_http_banner(sock)
-    elif conn_port == 443:
+    if conn_port == 443:
         return get_https_banner(sock)
-    elif conn_port == 21:
+    if conn_port == 21:
         # If the port is FTP, run our vulnerability check
         if check_ftp_anonymous(TARGET_IP):
             return "FTP - VULNERABLE: Anonymous login enabled!"
         return f"FTP - {get_generic_banner(sock)}"
-    elif conn_port == 22:
+    if conn_port == 22:
         return get_ssh_banner(sock)
-    elif conn_port == 25:
+    if conn_port == 25:
         return get_smtp_banner(sock)
-    elif conn_port in SERVICE_SIGNATURES:
+    if conn_port in SERVICE_SIGNATURES:
         service_name = SERVICE_SIGNATURES[conn_port]["name"]
         banner = get_generic_banner(sock)
         return f"{service_name} - {banner}" if banner else service_name
-    else:
-        # For all other ports, do a generic banner grab
-        banner = get_generic_banner(sock)
-        return banner if banner else "Unknown service"
+    
+    # For all other ports, do a generic banner grab
+    banner = get_generic_banner(sock)
+    return banner if banner else "Unknown service"
 
 def scan_udp_port(udp_port):
     """Scan a single UDP port."""
@@ -373,19 +374,17 @@ def scan_udp_port(udp_port):
         # Send a generic probe
         try:
             sock.sendto(b'', (TARGET_IP, udp_port))
-            response = sock.recv(1024)
+            sock.recv(1024)  # Remove the 'response =' assignment
             # If we get a response, the port is likely open
             service_name = SERVICE_SIGNATURES.get(udp_port, {}).get("name", "UDP service")
             results.append((udp_port, f"{service_name} (UDP)"))
         except socket.timeout:
-            # UDP timeout doesn't mean the port is closed, but we can't determine if it's open
             pass
         except ConnectionResetError:
-            # Port is definitely closed
             pass
         finally:
             sock.close()
-    except Exception:
+    except socket.error:
         pass
 
 def get_scan_type():
@@ -509,7 +508,7 @@ def save_results_json(filename, sorted_results, scan_stats):
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
-def save_results_csv(filename, sorted_results, scan_stats):
+def save_results_csv(filename, sorted_results, _scan_stats):  # Rename to _scan_stats
     """Save results in CSV format."""
     with open(filename, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
@@ -646,9 +645,9 @@ try:
                 PORT_QUEUE.put(('udp', p))
         else:
             total_ports = len(ports_to_scan)
-            protocol = 'tcp' if protocol_choice == '1' else 'udp'
+            PROTOCOL_TYPE = 'tcp' if protocol_choice == '1' else 'udp'  # Rename to PROTOCOL_TYPE
             for p in ports_to_scan:
-                PORT_QUEUE.put((protocol, p))
+                PORT_QUEUE.put((PROTOCOL_TYPE, p))
 
         # Setup the progress bar object
         pbar = tqdm(total=total_ports, desc=f"Scanning {protocol_name} Ports ({scan_type})")
@@ -658,14 +657,14 @@ try:
             """Worker that handles both TCP and UDP scanning with progress."""
             while not PORT_QUEUE.empty():
                 try:
-                    protocol, port_worker = PORT_QUEUE.get()
-                    if protocol == 'tcp':
+                    scan_protocol, port_worker = PORT_QUEUE.get()  # Rename to scan_protocol
+                    if scan_protocol == 'tcp':
                         scan_port(port_worker)
-                    elif protocol == 'udp':
+                    elif scan_protocol == 'udp':
                         scan_udp_port(port_worker)
                     PORT_QUEUE.task_done()
                     pbar.update(1)
-                except Exception:
+                except (socket.error, ValueError):  # More specific exception
                     PORT_QUEUE.task_done()
                     pbar.update(1)
 
