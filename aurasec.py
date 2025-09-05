@@ -1,5 +1,5 @@
 """
-Aura-sec v2.5.0
+Aura-sec v2.5.1
 A unique and easy-to-use scanner for the community.
 Enhanced with advanced service detection, stealth scanning, and multiple output formats.
 """
@@ -7,8 +7,7 @@ import sys
 import socket
 import threading
 from queue import Queue
-import ftplib # For FTP anonymous login check
-from tqdm import tqdm
+import ftplib  # For FTP anonymous login check
 import json
 import csv
 import ssl
@@ -26,12 +25,18 @@ except ImportError:
     print("[!] PySocks not found. Please install it using: pip install PySocks")
     sys.exit(1)
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    print("[!] tqdm not found. Please install it using: pip install tqdm")
+    sys.exit(1)
+
 # --- Global variables ---
 TARGET_IP = ""
 PORT_QUEUE = Queue()
 PRINT_LOCK = threading.Lock()
 NUM_THREADS = 100  # Default number of threads for normal scanning
-results = [] # A new list to store results (port and banner)
+results = []  # A new list to store results (port and banner)
 SCAN_START_TIME = None
 STEALTH_MODE = False
 SCAN_DELAY = 0  # Delay between scans in seconds
@@ -69,7 +74,6 @@ WEB_SIGNATURES = [
 ]
 
 # --- Functions ---
-# main_menu, get_target, get_ports stay the same...
 def main_menu():
     """Displays the main menu and gets the user's choice."""
     print("\nPlease select the type of scan:")
@@ -83,7 +87,7 @@ def main_menu():
 def configure_shodan():
     """Configure Shodan API integration."""
     global SHODAN_API_KEY, USE_SHODAN
-    
+
     use_shodan = input("\nEnable Shodan integration for additional intelligence? (y/n): ").lower()
     if use_shodan == 'y':
         api_key = input("Enter your Shodan API key (or press Enter to skip): ").strip()
@@ -95,15 +99,17 @@ def configure_shodan():
         else:
             print("[-] Shodan integration skipped")
     return False
+
+def get_stealth_options():
     """Configure stealth scan options."""
     global STEALTH_MODE, SCAN_DELAY, NUM_THREADS
-    
+
     STEALTH_MODE = True
     print("\n[*] Configuring stealth scan options...")
-    
+
     # Reduce threads for stealth
     NUM_THREADS = 20
-    
+
     # Get scan delay
     try:
         delay = input("Enter scan delay in seconds (0.1-5.0, default 1.0): ")
@@ -111,7 +117,7 @@ def configure_shodan():
         SCAN_DELAY = max(0.1, min(5.0, SCAN_DELAY))  # Clamp between 0.1 and 5.0
     except ValueError:
         SCAN_DELAY = 1.0
-    
+
     print(f"[*] Stealth mode enabled: {NUM_THREADS} threads, {SCAN_DELAY}s delay")
 
 def get_target():
@@ -126,19 +132,19 @@ def get_target():
             return target_ip
         except socket.gaierror:
             # If it fails, it's an invalid hostname or IP
-            print(f"[!] Error: Could not resolve '{target_input}'. "
-                  "Please check the name and your connection.")
+            print("[!] Error: Could not resolve '{}'. "
+                  "Please check the name and your connection.".format(target_input))
 
 def query_shodan(ip):
     """Query Shodan API for additional information about the target."""
     if not USE_SHODAN or not SHODAN_API_KEY:
         return None
-    
+
     try:
         url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_API_KEY}"
         with urllib.request.urlopen(url, timeout=10) as response:
             data = json.loads(response.read().decode())
-            
+
         shodan_info = {
             "organization": data.get("org", "Unknown"),
             "isp": data.get("isp", "Unknown"),
@@ -157,34 +163,33 @@ def detect_web_technologies(response_headers):
     """Detect web technologies from HTTP response headers."""
     technologies = []
     full_response = " ".join(response_headers.split('\r\n'))
-    
+
     for pattern, tech_name in WEB_SIGNATURES:
         if re.search(pattern, full_response, re.IGNORECASE):
             technologies.append(tech_name)
-    
+
     return technologies
 
-def analyze_ssl_certificate(ip, port=443):
+def analyze_ssl_certificate(ip, ssl_port=443):
     """Analyze SSL certificate for vulnerabilities and information."""
     try:
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-        
-        with socket.create_connection((ip, port), timeout=5) as sock:
+
+        with socket.create_connection((ip, ssl_port), timeout=5) as sock:
             with context.wrap_socket(sock, server_hostname=ip) as ssock:
                 cert = ssock.getpeercert(binary_form=False)
-                cert_der = ssock.getpeercert(binary_form=True)
-                
+
                 if cert:
                     # Extract certificate information
                     subject = dict(x[0] for x in cert.get('subject', []))
                     issuer = dict(x[0] for x in cert.get('issuer', []))
-                    
+
                     # Check certificate validity
                     not_before = cert.get('notBefore')
                     not_after = cert.get('notAfter')
-                    
+
                     # Check for weak signature algorithms
                     cert_info = {
                         'common_name': subject.get('commonName', 'Unknown'),
@@ -196,7 +201,7 @@ def analyze_ssl_certificate(ip, port=443):
                         'signature_algorithm': 'Unknown',  # Would need additional parsing
                         'san': cert.get('subjectAltName', [])
                     }
-                    
+
                     # Basic vulnerability checks
                     vulnerabilities = []
                     if not_after:
@@ -204,15 +209,17 @@ def analyze_ssl_certificate(ip, port=443):
                             expiry = datetime.datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
                             if expiry < datetime.datetime.now():
                                 vulnerabilities.append("Certificate expired")
-                        except:
+                        except ValueError:
                             pass
-                    
+
                     cert_info['vulnerabilities'] = vulnerabilities
                     return cert_info
-                    
+
     except Exception:
         pass
     return None
+
+def get_custom_port_range():
     """Gets custom port range from user input."""
     try:
         start_port = int(input("Enter start port: "))
@@ -240,16 +247,17 @@ def get_ports():
 def get_http_banner(sock):
     """Get banner from HTTP port with enhanced web technology detection."""
     try:
-        http_request = b'GET / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + b'\r\nUser-Agent: Aura-sec/2.5.0\r\n\r\n'
+        http_request = (b'GET / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() + 
+                       b'\r\nUser-Agent: Aura-sec/2.5.0\r\n\r\n')
         sock.send(http_request)
         response = sock.recv(4096).decode('utf-8', errors='ignore')
-        
+
         lines = response.split('\r\n')
-        
+
         # Extract server information and web technologies
         server_info = ""
         tech_info = []
-        
+
         for line_item in lines:
             if 'Server:' in line_item:
                 server_info = line_item.split(': ')[1].strip()
@@ -257,23 +265,23 @@ def get_http_banner(sock):
                 tech_info.append(line_item.split(': ')[1].strip())
             elif 'X-AspNet-Version:' in line_item:
                 tech_info.append("ASP.NET " + line_item.split(': ')[1].strip())
-        
+
         # Detect additional web technologies
         detected_tech = detect_web_technologies(response)
         tech_info.extend(detected_tech)
-        
+
         # Remove duplicates
         tech_info = list(set(tech_info))
-        
+
         result = f"HTTP - {server_info}" if server_info else "HTTP"
         if tech_info:
             result += f" [{', '.join(tech_info)}]"
-        
+
         if not server_info and lines:
             status_line = lines[0].strip()
             if "HTTP/" in status_line:
                 result = f"HTTP - {status_line}"
-        
+
         return result
     except socket.error:
         pass
@@ -288,8 +296,7 @@ def get_https_banner(sock):
             if cert_info.get('vulnerabilities'):
                 result += f" [VULN: {', '.join(cert_info['vulnerabilities'])}]"
             return result
-        else:
-            return "HTTPS"
+        return "HTTPS"
     except Exception:
         return "HTTPS"
 
@@ -321,23 +328,33 @@ def get_generic_banner(sock):
         pass
     return ""
 
-def handle_port_connection(sock, port):
+def check_ftp_anonymous(ip_address):
+    """Tries to log in to an FTP server at the given IP anonymously."""
+    try:
+        ftp = ftplib.FTP(ip_address, timeout=2)
+        ftp.login('anonymous', '')
+        ftp.quit()
+        return True
+    except ftplib.all_errors:
+        return False
+
+def handle_port_connection(sock, conn_port):
     """Handle the connection and dispatch to the correct banner/vulnerability check."""
-    if port == 80:
+    if conn_port == 80:
         return get_http_banner(sock)
-    elif port == 443:
+    elif conn_port == 443:
         return get_https_banner(sock)
-    elif port == 21:
+    elif conn_port == 21:
         # If the port is FTP, run our vulnerability check
         if check_ftp_anonymous(TARGET_IP):
             return "FTP - VULNERABLE: Anonymous login enabled!"
         return f"FTP - {get_generic_banner(sock)}"
-    elif port == 22:
+    elif conn_port == 22:
         return get_ssh_banner(sock)
-    elif port == 25:
+    elif conn_port == 25:
         return get_smtp_banner(sock)
-    elif port in SERVICE_SIGNATURES:
-        service_name = SERVICE_SIGNATURES[port]["name"]
+    elif conn_port in SERVICE_SIGNATURES:
+        service_name = SERVICE_SIGNATURES[conn_port]["name"]
         banner = get_generic_banner(sock)
         return f"{service_name} - {banner}" if banner else service_name
     else:
@@ -345,30 +362,28 @@ def handle_port_connection(sock, port):
         banner = get_generic_banner(sock)
         return banner if banner else "Unknown service"
 
-def scan_udp_port(port):
+def scan_udp_port(udp_port):
     """Scan a single UDP port."""
     try:
         # Add stealth delay if enabled
         if STEALTH_MODE and SCAN_DELAY > 0:
             time.sleep(random.uniform(0.1, SCAN_DELAY))
-        
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(2)
-        
+
         # Send a generic probe
         try:
-            sock.sendto(b'', (TARGET_IP, port))
+            sock.sendto(b'', (TARGET_IP, udp_port))
             response = sock.recv(1024)
             # If we get a response, the port is likely open
-            service_name = SERVICE_SIGNATURES.get(port, {}).get("name", "UDP service")
-            results.append((port, f"{service_name} (UDP)"))
+            service_name = SERVICE_SIGNATURES.get(udp_port, {}).get("name", "UDP service")
+            results.append((udp_port, f"{service_name} (UDP)"))
         except socket.timeout:
             # UDP timeout doesn't mean the port is closed, but we can't determine if it's open
             pass
         except ConnectionResetError:
             # Port is definitely closed
-            pass
-        except Exception:
             pass
         finally:
             sock.close()
@@ -383,29 +398,27 @@ def get_scan_type():
     print("3. Both TCP and UDP")
     choice = input("Enter choice (1-3, default 1): ")
     return choice if choice in ['1', '2', '3'] else '1'
+
+def scan_port(scan_port_num):
     """Scans a single port and grabs a banner if possible using appropriate probes."""
     sock = None
     try:
         # Add stealth delay if enabled
         if STEALTH_MODE and SCAN_DELAY > 0:
             time.sleep(random.uniform(0.1, SCAN_DELAY))
-        
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         socket.setdefaulttimeout(2)  # Slightly longer timeout for banner grabbing
-        
-        if sock.connect_ex((TARGET_IP, port)) == 0:
-            port_banner = handle_port_connection(sock, port)
-            results.append((port, port_banner))
-        
+
+        if sock.connect_ex((TARGET_IP, scan_port_num)) == 0:
+            port_banner = handle_port_connection(sock, scan_port_num)
+            results.append((scan_port_num, port_banner))
+
         if sock:
             sock.close()
     except socket.error:
         if sock:
             sock.close()
-
-def get_banner():
-    """Unused placeholder for banner grabbing."""
-    # Function intentionally left blank for future use
 
 def check_tor_proxy():
     """Checks if the Tor SOCKS proxy is running on the default port 9050."""
@@ -428,17 +441,31 @@ def worker():
         scan_port(port_worker)
         PORT_QUEUE.task_done()
 
+def get_scan_statistics():
+    """Calculate scan statistics."""
+    if SCAN_START_TIME is None:
+        return {"duration": 0, "ports_scanned": 0, "start_time": "Unknown"}
+    
+    duration = time.time() - SCAN_START_TIME
+    start_time = datetime.datetime.fromtimestamp(SCAN_START_TIME).strftime('%Y-%m-%d %H:%M:%S')
+    
+    return {
+        "duration": duration,
+        "ports_scanned": len(results),
+        "start_time": start_time
+    }
+
 def save_results_txt(filename, sorted_results, scan_stats):
     """Save results in text format."""
     with open(filename, 'w', encoding='utf-8') as f:
-        f.write(f"Aura-sec Scan Report\n")
+        f.write("Aura-sec Scan Report\n")
         f.write("=" * 50 + "\n")
         f.write(f"Target: {TARGET_IP}\n")
         f.write(f"Scan Date: {scan_stats['start_time']}\n")
         f.write(f"Duration: {scan_stats['duration']:.2f} seconds\n")
         f.write(f"Ports Scanned: {scan_stats['ports_scanned']}\n")
         f.write(f"Open Ports: {len(sorted_results)}\n")
-        
+
         # Include Shodan information if available
         shodan_info = scan_stats.get('shodan_info')
         if shodan_info:
@@ -450,9 +477,9 @@ def save_results_txt(filename, sorted_results, scan_stats):
                 f.write(f"Known Vulnerabilities: {len(shodan_info['vulns'])}\n")
             if shodan_info['tags']:
                 f.write(f"Tags: {', '.join(shodan_info['tags'])}\n")
-        
+
         f.write("-" * 50 + "\n\n")
-        
+
         for port_result, banner_result in sorted_results:
             f.write(f"Port {port_result}: OPEN | Service: {banner_result}\n")
 
@@ -464,23 +491,23 @@ def save_results_json(filename, sorted_results, scan_stats):
             "start_time": scan_stats['start_time'],
             "duration": scan_stats['duration'],
             "ports_scanned": scan_stats['ports_scanned'],
-            "scanner": "Aura-sec v2.5.0"
+            "scanner": "Aura-sec v2.5.1"
         },
         "results": []
     }
-    
+
     # Include Shodan information if available
     shodan_info = scan_stats.get('shodan_info')
     if shodan_info:
         data["shodan_intelligence"] = shodan_info
-    
+
     for port_result, banner_result in sorted_results:
         data["results"].append({
             "port": port_result,
             "status": "open",
             "service": banner_result
         })
-    
+
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
@@ -495,17 +522,17 @@ def save_results_csv(filename, sorted_results, scan_stats):
 def display_results_and_save():
     """Display scan results and handle saving to file."""
     scan_stats = get_scan_statistics()
-    
+
     # Get Shodan information if enabled
     shodan_info = None
     if USE_SHODAN and SHODAN_API_KEY:
         print("\n[*] Querying Shodan for additional intelligence...")
         shodan_info = query_shodan(TARGET_IP)
-    
+
     print("-" * 50)
     print("[*] Scan complete.")
     print(f"[*] Scan duration: {scan_stats['duration']:.2f} seconds")
-    
+
     # Display Shodan information if available
     if shodan_info:
         print("\n[*] Shodan Intelligence:")
@@ -516,18 +543,18 @@ def display_results_and_save():
             print(f"    Known Vulnerabilities: {len(shodan_info['vulns'])}")
         if shodan_info['tags']:
             print(f"    Tags: {', '.join(shodan_info['tags'])}")
-    
+
     if results:
         print(f"\n[*] Found {len(results)} open ports:")
         sorted_results = sorted(results, key=lambda x: x[0])
-        
+
         for port_result, banner_result in sorted_results:
             if banner_result:
                 print(f"\033[92m[+] Port {port_result} is OPEN\033[0m  |  "
                       f"\033[96mService: {banner_result}\033[0m")
             else:
                 print(f"\033[92m[+] Port {port_result} is OPEN\033[0m")
-        
+
         save_results = input("\nDo you want to save the results to a file? (y/n): ").lower()
         if save_results == 'y':
             print("\nSelect output format:")
@@ -535,14 +562,15 @@ def display_results_and_save():
             print("2. JSON (.json)")
             print("3. CSV (.csv)")
             format_choice = input("Enter choice (1-3): ")
-            
+
             base_filename = input("Enter base filename (without extension): ")
             if not base_filename:
-                base_filename = f"aura_scan_{TARGET_IP}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                base_filename = f"aura_scan_{TARGET_IP}_{timestamp}"
+
             # Include Shodan information in scan stats
             scan_stats['shodan_info'] = shodan_info
-            
+
             try:
                 if format_choice == '1':
                     filename = f"{base_filename}.txt"
@@ -557,25 +585,14 @@ def display_results_and_save():
                     print("[!] Invalid choice. Saving as text format.")
                     filename = f"{base_filename}.txt"
                     save_results_txt(filename, sorted_results, scan_stats)
-                
+
                 print(f"[+] Results saved to {filename}")
             except (OSError, IOError) as exc:
                 print(f"[!] Could not save results: {exc}")
     else:
         print("[*] No open ports found.")
 
-def check_ftp_anonymous(ip_address):
-    """Tries to log in to an FTP server at the given IP anonymously."""
-    try:
-        ftp = ftplib.FTP(ip_address, timeout=2)
-        ftp.login('anonymous', '')
-        ftp.quit()
-        return True
-    except ftplib.all_errors:  # <-- Use specific FTP exception
-        return False
-
 # --- Main Program ---
-# ... (BANNER and welcome message stay the same) ...
 BANNER = r"""
 
 
@@ -590,12 +607,12 @@ BANNER = r"""
   `--' `--'  `-----'    `--' '--'  `--' `--'          `-----'  `------'   `-----'  
 
 """
+
 print(BANNER)
-print("           Welcome to Aura-sec v2.5.0")
+print("           Welcome to Aura-sec v2.5.1")
 print("           A scanner by I R F A N")
 print("     GitHub: https://github.com/irfan-sec")
 print("-" * 50)
-
 
 try:
     scan_choice = main_menu()
@@ -605,24 +622,24 @@ try:
             get_stealth_options()
         elif scan_choice == '4':
             configure_shodan()
-        
+
         TARGET_IP = get_target()
-        
+
         # Get protocol choice
         protocol_choice = get_scan_type()
         port_range = get_ports()
-        
+
         scan_type = {"1": "Normal", "3": "STEALTH", "4": "INTELLIGENCE"}[scan_choice]
         protocol_name = {"1": "TCP", "2": "UDP", "3": "TCP+UDP"}[protocol_choice]
-        
+
         print(f"\n[*] Starting {scan_type} {protocol_name} Scan on target: {TARGET_IP}...")
-        
+
         # Initialize scan timing
         SCAN_START_TIME = time.time()
-        
+
         # Convert range to list to get the total count for the progress bar
         ports_to_scan = list(port_range)
-        
+
         # For combined scan, we'll scan both TCP and UDP
         if protocol_choice == '3':
             total_ports = len(ports_to_scan) * 2  # TCP + UDP
@@ -642,13 +659,17 @@ try:
         def worker_with_progress():
             """Worker that handles both TCP and UDP scanning with progress."""
             while not PORT_QUEUE.empty():
-                protocol, port_worker = PORT_QUEUE.get()
-                if protocol == 'tcp':
-                    scan_port(port_worker)
-                elif protocol == 'udp':
-                    scan_udp_port(port_worker)
-                PORT_QUEUE.task_done()
-                pbar.update(1)
+                try:
+                    protocol, port_worker = PORT_QUEUE.get()
+                    if protocol == 'tcp':
+                        scan_port(port_worker)
+                    elif protocol == 'udp':
+                        scan_udp_port(port_worker)
+                    PORT_QUEUE.task_done()
+                    pbar.update(1)
+                except Exception:
+                    PORT_QUEUE.task_done()
+                    pbar.update(1)
 
         # Create and start the threads with the new worker function
         thread_list = []
@@ -684,20 +705,38 @@ try:
             port_range = get_ports()
             if port_range:
                 print(f"\n[*] Starting ANONYMOUS Scan on target: {TARGET_IP}...")
-                for p in port_range:
+
+                ports_to_scan = list(port_range)
+                for p in ports_to_scan:
                     PORT_QUEUE.put(p)
 
                 # Using fewer threads is generally better and safer for the Tor network
                 NUM_THREADS = 20
                 print(f"[*] Using {NUM_THREADS} threads for anonymous scan.")
 
+                # Setup the progress bar
+                pbar = tqdm(total=len(ports_to_scan), desc="Anonymous TCP Scan")
+
+                def anonymous_worker():
+                    """Worker for anonymous scanning."""
+                    while not PORT_QUEUE.empty():
+                        try:
+                            port_worker = PORT_QUEUE.get()
+                            scan_port(port_worker)
+                            PORT_QUEUE.task_done()
+                            pbar.update(1)
+                        except Exception:
+                            PORT_QUEUE.task_done()
+                            pbar.update(1)
+
                 thread_list = []
                 for _ in range(NUM_THREADS):
-                    thread = threading.Thread(target=worker)
+                    thread = threading.Thread(target=anonymous_worker)
                     thread_list.append(thread)
                     thread.start()
 
                 PORT_QUEUE.join()
+                pbar.close()
 
                 # This calls your existing results and save logic
                 display_results_and_save()
@@ -709,7 +748,6 @@ try:
         print("\n[!] Invalid choice. Please run the program again and select 1-4.")
 except KeyboardInterrupt:
     print("\n[!] Exiting program (Ctrl+C detected).")
+    sys.exit(0)
 
 print("\nThank you for using Aura-sec!")
-# End of main program
-# This is the end of the aurasec.py file.
