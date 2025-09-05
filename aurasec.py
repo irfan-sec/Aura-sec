@@ -96,8 +96,7 @@ def configure_shodan():
             USE_SHODAN = True
             print("[+] Shodan integration enabled")
             return True
-        else:
-            print("[-] Shodan integration skipped")
+        print("[-] Shodan integration skipped")
     return False
 
 def get_stealth_options():
@@ -132,8 +131,7 @@ def get_target():
             return target_ip
         except socket.gaierror:
             # If it fails, it's an invalid hostname or IP
-            print("[!] Error: Could not resolve '{}'. "
-                  "Please check the name and your connection.".format(target_input))
+            print(f"[!] Error: Could not resolve '{target_input}'. Please check the name and your connection.")
 
 def query_shodan(ip):
     """Query Shodan API for additional information about the target."""
