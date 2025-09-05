@@ -86,7 +86,7 @@ def main_menu():
 
 def configure_shodan():
     """Configure Shodan API integration."""
-    global SHODAN_API_KEY, USE_SHODAN
+    global SHODAN_API_KEY, USE_SHODAN  # pylint: disable=global-statement
 
     use_shodan = input("\nEnable Shodan integration for additional intelligence? (y/n): ").lower()
     if use_shodan == 'y':
@@ -155,7 +155,7 @@ def query_shodan(ip):
             "tags": data.get("tags", [])
         }
         return shodan_info
-    except Exception:
+    except (urllib.error.URLError, json.JSONDecodeError, KeyError):
         return None
 
 def detect_web_technologies(response_headers):
@@ -296,8 +296,9 @@ def get_https_banner(_sock):  # Rename to _sock to indicate it's unused
                 result += f" [VULN: {', '.join(cert_info['vulnerabilities'])}]"
             return result
         return "HTTPS"
-    except (ssl.SSLError, socket.error):
-        return "HTTPS"
+    except (ssl.SSLError, socket.error, ValueError):
+        pass
+    return None
 
 def get_ssh_banner(sock):
     """Get SSH version banner."""
@@ -722,7 +723,7 @@ try:
                             scan_port(port_worker)
                             PORT_QUEUE.task_done()
                             pbar.update(1)
-                        except Exception:
+                        except (socket.error, ValueError):
                             PORT_QUEUE.task_done()
                             pbar.update(1)
 
