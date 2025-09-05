@@ -749,3 +749,4 @@ except KeyboardInterrupt:
     sys.exit(0)
 
 print("\nThank you for using Aura-sec!")
+# End of aurasec.py
