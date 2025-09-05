@@ -444,10 +444,8 @@ def get_scan_statistics():
     """Calculate scan statistics."""
     if SCAN_START_TIME is None:
         return {"duration": 0, "ports_scanned": 0, "start_time": "Unknown"}
-    
     duration = time.time() - SCAN_START_TIME
     start_time = datetime.datetime.fromtimestamp(SCAN_START_TIME).strftime('%Y-%m-%d %H:%M:%S')
-    
     return {
         "duration": duration,
         "ports_scanned": len(results),
