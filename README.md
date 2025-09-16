@@ -282,7 +282,6 @@ export AURA_TIMEOUT=5
 
 - **🥇 World's Best Open-Source Security Scanner 2024**
 - **🏅 Most Innovative Cybersecurity Tool**
-- **⭐ 10,000+ GitHub Stars**
 - **🔥 Featured in Top Security Conferences**
 
 ---
