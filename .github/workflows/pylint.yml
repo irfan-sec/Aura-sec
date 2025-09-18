@@ -2,6 +2,10 @@ name: Aura-sec v3.0.0 CI/CD
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -13,7 +17,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     
@@ -48,10 +52,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Run Bandit Security Scan
-      uses: PyCQA/bandit-action@v1
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        targets: "."
+        python-version: "3.8"
+    
+    - name: Install bandit with SARIF support
+      run: |
+        pip install bandit[sarif]
+    
+    - name: Run Bandit Security Scan
+      run: |
+        bandit -r . -f sarif -o results.sarif --exclude .svn,CVS,.bzr,.hg,.git,__pycache__,.tox,.eggs,*.egg || true
+    
+    - name: Upload SARIF to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: results.sarif
     
     - name: Run Safety Check
       run: |
@@ -65,7 +83,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python 3.12
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.12"
     
