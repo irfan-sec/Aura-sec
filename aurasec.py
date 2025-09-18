@@ -1824,38 +1824,21 @@ def query_shodan(ip):
         url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_API_KEY}"
         with urllib.request.urlopen(url, timeout=10) as response:
             data = json.loads(response.read().decode())
-        # Extract server information and web technologies
-        server_info = ""
-        tech_info = []
-
-        for line_item in lines:
-            if 'Server:' in line_item:
-                server_info = line_item.split(': ')[1].strip()
-            elif 'X-Powered-By:' in line_item:
-                tech_info.append(line_item.split(': ')[1].strip())
-            elif 'X-AspNet-Version:' in line_item:
-                tech_info.append("ASP.NET " + line_item.split(': ')[1].strip())
-
-        # Detect additional web technologies
-        detected_tech = detect_web_technologies(response)
-        tech_info.extend(detected_tech)
-
-        # Remove duplicates
-        tech_info = list(set(tech_info))
-
-        result = f"HTTP - {server_info}" if server_info else "HTTP"
-        if tech_info:
-            result += f" [{', '.join(tech_info)}]"
-
-        if not server_info and lines:
-            status_line = lines[0].strip()
-            if "HTTP/" in status_line:
-                result = f"HTTP - {status_line}"
-
+        
+        # Extract information from Shodan API response
+        result = {
+            'organization': data.get('org', 'Unknown'),
+            'isp': data.get('isp', 'Unknown'),
+            'city': data.get('city', 'Unknown'),
+            'country': data.get('country_name', 'Unknown'),
+            'vulns': data.get('vulns', []),
+            'tags': data.get('tags', [])
+        }
+        
         return result
-    except socket.error:
+    except (urllib.error.URLError, json.JSONDecodeError, KeyError):
         pass
-    return "HTTP"
+    return None
 
 def get_https_banner(_sock):  # Rename to _sock to indicate it's unused
     """Get banner from HTTPS port with SSL certificate analysis."""
@@ -1908,6 +1891,60 @@ def check_ftp_anonymous(ip_address):
         return True
     except ftplib.all_errors:
         return False
+
+def get_http_banner(sock):
+    """Get HTTP banner with basic header parsing."""
+    try:
+        request = b"GET / HTTP/1.1\r\nHost: target\r\nUser-Agent: Aura-sec\r\n\r\n"
+        sock.send(request)
+        response = sock.recv(4096).decode('utf-8', errors='ignore')
+        
+        if response:
+            lines = response.split('\n')
+            status_line = lines[0].strip() if lines else ""
+            
+            # Extract server information
+            server_info = ""
+            for line in lines:
+                if line.lower().startswith('server:'):
+                    server_info = line.split(':', 1)[1].strip()
+                    break
+            
+            if server_info:
+                return f"HTTP - {server_info}"
+            elif "HTTP/" in status_line:
+                return f"HTTP - {status_line}"
+            else:
+                return "HTTP"
+        return "HTTP"
+    except socket.error:
+        return "HTTP"
+
+def analyze_ssl_certificate(host, port):
+    """Analyze SSL certificate and return basic information."""
+    try:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        
+        with socket.create_connection((host, port), timeout=5) as sock:
+            with context.wrap_socket(sock, server_hostname=host) as ssock:
+                cert = ssock.getpeercert()
+                if cert:
+                    return {
+                        'common_name': cert.get('subject', [[]])[0][0][1] if cert.get('subject') else 'Unknown',
+                        'issuer_org': cert.get('issuer', [[]])[0][0][1] if cert.get('issuer') else 'Unknown',
+                        'vulnerabilities': []  # Basic implementation without detailed vulnerability checking
+                    }
+    except (ssl.SSLError, socket.error, ValueError, IndexError):
+        pass
+    return None
+
+def detect_web_technologies(response_data):
+    """Detect web technologies from response data."""
+    # Basic implementation that returns empty list
+    # In a full implementation, this would analyze headers and content
+    return []
 
 # pylint: disable=too-many-return-statements
 def handle_port_connection(sock, conn_port):
