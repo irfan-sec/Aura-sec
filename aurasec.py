@@ -405,7 +405,7 @@ class CloudDetector:
                             break
                 except requests.exceptions.RequestException:
                     continue
-        except Exception:
+        except (requests.exceptions.RequestException, KeyError, ValueError):
             pass
 
         return cloud_info
@@ -590,7 +590,7 @@ class BlockchainDetector:
 
     def detect_blockchain_services(self, banner: str, port: int) -> Dict[str, Any]:
         """Detect blockchain and cryptocurrency services."""
-        results = {
+        detection_results = {
             "is_blockchain": False,
             "blockchain_type": "unknown",
             "services": [],
@@ -600,20 +600,20 @@ class BlockchainDetector:
 
         # Check known blockchain ports
         if port in self.crypto_ports:
-            results["is_blockchain"] = True
-            results["blockchain_type"] = self.crypto_ports[port]
-            results["confidence"] = 0.9
-            results["services"].append(self.crypto_ports[port])
+            detection_results["is_blockchain"] = True
+            detection_results["blockchain_type"] = self.crypto_ports[port]
+            detection_results["confidence"] = 0.9
+            detection_results["services"].append(self.crypto_ports[port])
 
         # Analyze banner for blockchain indicators
         banner_lower = banner.lower()
         for blockchain_type, indicators in self.blockchain_signatures.items():
             for indicator in indicators:
                 if indicator in banner_lower:
-                    results["is_blockchain"] = True
-                    if blockchain_type not in results["services"]:
-                        results["services"].append(blockchain_type)
-                    results["confidence"] = max(results["confidence"], 0.8)
+                    detection_results["is_blockchain"] = True
+                    if blockchain_type not in detection_results["services"]:
+                        detection_results["services"].append(blockchain_type)
+                    detection_results["confidence"] = max(detection_results["confidence"], 0.8)
 
         # Detect DeFi protocols
         defi_patterns = [
@@ -625,9 +625,9 @@ class BlockchainDetector:
         
         for pattern in defi_patterns:
             if re.search(pattern, banner_lower):
-                results["defi_protocols"].append(pattern.split('|')[0])
+                detection_results["defi_protocols"].append(pattern.split('|')[0])
 
-        return results
+        return detection_results
 
     def analyze_crypto_mining(self, banner: str, port: int) -> Dict[str, Any]:
         """Analyze cryptocurrency mining operations."""
@@ -700,7 +700,7 @@ class IoTSpecializedScanner:
     def fingerprint_iot_device(self, banner: str, port: int, 
                               target_ip: str) -> Dict[str, Any]:
         """Advanced IoT device fingerprinting."""
-        results = {
+        device_info = {
             "device_type": "unknown",
             "manufacturer": "unknown",
             "model": "unknown",
@@ -715,19 +715,19 @@ class IoTSpecializedScanner:
         # Check each IoT category
         for category, db in self.iot_databases.items():
             if port in db["ports"]:
-                results["confidence"] += 0.3
+                device_info["confidence"] += 0.3
                 
                 for signature in db["signatures"]:
                     if signature in banner_lower:
-                        results["device_type"] = category
-                        results["iot_category"] = category
-                        results["confidence"] += 0.4
+                        device_info["device_type"] = category
+                        device_info["iot_category"] = category
+                        device_info["confidence"] += 0.4
                         
                         # Extract manufacturer and model
                         if signature in ["hikvision", "dahua", "axis"]:
-                            results["manufacturer"] = signature.title()
+                            device_info["manufacturer"] = signature.title()
                         elif signature in ["cisco", "netgear", "linksys"]:
-                            results["manufacturer"] = signature.title()
+                            device_info["manufacturer"] = signature.title()
 
         # Extract firmware version
         version_patterns = [
@@ -739,7 +739,7 @@ class IoTSpecializedScanner:
         for pattern in version_patterns:
             match = re.search(pattern, banner_lower)
             if match:
-                results["firmware_version"] = match.group(1)
+                device_info["firmware_version"] = match.group(1)
                 break
 
         # Check for common IoT security issues
@@ -753,9 +753,9 @@ class IoTSpecializedScanner:
         for issue_type, indicators in security_checks:
             for indicator in indicators:
                 if indicator in banner_lower:
-                    results["security_issues"].append(issue_type)
+                    device_info["security_issues"].append(issue_type)
 
-        return results
+        return device_info
 
     def scan_iot_specific_ports(self, target_ip: str) -> List[int]:
         """Return IoT-specific ports for targeted scanning."""
@@ -810,7 +810,7 @@ class APISecurityTester:
 
     async def test_api_security(self, target_ip: str, port: int) -> Dict[str, Any]:
         """Comprehensive API security testing."""
-        results = {
+        security_results = {
             "api_detected": False,
             "api_type": "unknown",
             "endpoints_found": [],
@@ -822,19 +822,19 @@ class APISecurityTester:
         # Test for API presence
         api_tests = await self._detect_api_presence(target_ip, port)
         if api_tests["found"]:
-            results["api_detected"] = True
-            results["api_type"] = api_tests["type"]
-            results["endpoints_found"] = api_tests["endpoints"]
+            security_results["api_detected"] = True
+            security_results["api_type"] = api_tests["type"]
+            security_results["endpoints_found"] = api_tests["endpoints"]
 
             # Perform vulnerability tests
             vuln_results = await self._test_api_vulnerabilities(
                 target_ip, port, api_tests["endpoints"]
             )
-            results["vulnerabilities"] = vuln_results["vulnerabilities"]
-            results["security_score"] = vuln_results["score"]
-            results["recommendations"] = vuln_results["recommendations"]
+            security_results["vulnerabilities"] = vuln_results["vulnerabilities"]
+            security_results["security_score"] = vuln_results["score"]
+            security_results["recommendations"] = vuln_results["recommendations"]
 
-        return results
+        return security_results
 
     async def _detect_api_presence(self, target_ip: str, port: int) -> Dict[str, Any]:
         """Detect API presence and type."""
@@ -855,7 +855,7 @@ class APISecurityTester:
                 if endpoint in ["/api/", "/api/v1/", "/graphql/"]:
                     found_endpoints.append(endpoint)
 
-            except Exception:
+            except (AttributeError, KeyError, ValueError):
                 continue
 
         return {
@@ -1183,7 +1183,7 @@ async def enhanced_port_scan(target_ip: str, port: int,
 
     return None
 
-async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResult]:
+async def turbo_scan_mode(target_ip: str, ports: List[int]) -> List[ScanResult]:
     """Ultra-fast async scanning mode."""
     if RICH_AVAILABLE:
         console.print(f"[bold green]🚀 Initiating Turbo Scan on {target_ip}...[/bold green]")
@@ -1205,12 +1205,12 @@ async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
             TaskProgressColumn(),
             console=console
         ) as progress:
-            task = progress.add_task("🔍 Scanning ports...", total=len(port_list))
+            task = progress.add_task("🔍 Scanning ports...", total=len(ports))
 
             scan_results = []
             batch_size = 50
-            for i in range(0, len(port_list), batch_size):
-                batch = port_list[i:i + batch_size]
+            for i in range(0, len(ports), batch_size):
+                batch = ports[i:i + batch_size]
                 batch_results = await asyncio.gather(
                     *[scan_with_semaphore(port) for port in batch],
                     return_exceptions=True
@@ -1224,7 +1224,7 @@ async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
     else:
         # Fallback without rich
         scan_results = []
-        tasks = [scan_with_semaphore(port) for port in port_list]
+        tasks = [scan_with_semaphore(port) for port in ports]
         completed_results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in completed_results:
@@ -1233,7 +1233,7 @@ async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
 
     return scan_results
 
-async def ghost_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResult]:
+async def ghost_scan_mode(target_ip: str, ports: List[int]) -> List[ScanResult]:
     """Advanced stealth scanning with evasion techniques."""
     if RICH_AVAILABLE:
         console.print(f"[bold magenta]🥷 Initiating Ghost Scan on {target_ip}...[/bold magenta]")
@@ -1257,29 +1257,29 @@ async def ghost_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
             TaskProgressColumn(),
             console=console
         ) as progress:
-            task = progress.add_task("👻 Stealth scanning...", total=len(port_list))
+            task = progress.add_task("👻 Stealth scanning...", total=len(ports))
 
-            for port in port_list:
+            for port in ports:
                 result = await stealth_scan_with_semaphore(port)
                 if result:
                     scan_results.append(result)
                 progress.update(task, advance=1)
     else:
-        for port in port_list:
+        for port in ports:
             result = await stealth_scan_with_semaphore(port)
             if result:
                 scan_results.append(result)
 
     return scan_results
 
-async def intelligence_scan_mode(target_ip: str, port_list: List[int]) -> Dict[str, Any]:
+async def intelligence_scan_mode(target_ip: str, ports: List[int]) -> Dict[str, Any]:
     """Comprehensive intelligence gathering scan with v3.1.0 enhancements."""
     if RICH_AVAILABLE:
         console.print(f"[bold cyan]🧠 Initiating Intelligence Scan on {target_ip}...[/bold cyan]")
         console.print("[yellow]🔍 Gathering comprehensive threat intelligence[/yellow]")
 
     # First, do port scanning
-    scan_results = await turbo_scan_mode(target_ip, port_list)
+    scan_results = await turbo_scan_mode(target_ip, ports)
 
     # Get threat intelligence
     threat_data = {}
@@ -1310,7 +1310,7 @@ async def intelligence_scan_mode(target_ip: str, port_list: List[int]) -> Dict[s
                     "port": port,
                     "results": api_result
                 })
-        except Exception:
+        except (asyncio.TimeoutError, ConnectionError, OSError):
             continue
 
     # v3.1.0 NEW: Enhanced IoT Analysis for Intelligence
@@ -1356,7 +1356,7 @@ async def intelligence_scan_mode(target_ip: str, port_list: List[int]) -> Dict[s
         "timestamp": datetime.datetime.now().isoformat()
     }
 
-async def cloud_hunter_mode(target_ip: str, port_list: List[int]) -> Dict[str, Any]:
+async def cloud_hunter_mode(target_ip: str, ports: List[int]) -> Dict[str, Any]:
     """Specialized cloud infrastructure detection."""
     if RICH_AVAILABLE:
         console.print(f"[bold blue]☁️ Initiating Cloud Hunter on {target_ip}...[/bold blue]")
@@ -1364,7 +1364,7 @@ async def cloud_hunter_mode(target_ip: str, port_list: List[int]) -> Dict[str, A
 
     # Focus on cloud-specific ports
     cloud_ports = [22, 80, 443, 2375, 2376, 6443, 8080, 10250, 10255]
-    target_ports = [port for port in port_list if port in cloud_ports]
+    target_ports = [port for port in ports if port in cloud_ports]
 
     # Perform focused scanning
     scan_results = await turbo_scan_mode(target_ip, target_ports)
@@ -1787,7 +1787,7 @@ async def save_results_prompt(scan_data: Dict[str, Any]):
             # JSON and CSV generation (same as above)
 
         if RICH_AVAILABLE:
-            console.print(f"[green]✅ Report(s) generated successfully![/green]")
+            console.print("[green]✅ Report(s) generated successfully![/green]")
         else:
             print("[+] Report(s) generated successfully!")
 
@@ -2350,9 +2350,9 @@ async def main():
             else:
                 start_port = int(input("Start port: "))
                 end_port = int(input("End port: "))
-            port_list = list(range(start_port, end_port + 1))
+            scan_ports = list(range(start_port, end_port + 1))
         else:
-            port_list = list(range(1, 1025))
+            scan_ports = list(range(1, 1025))
 
         # Initialize scan timing
         SCAN_START_TIME = time.time()
@@ -2363,7 +2363,7 @@ async def main():
         if scan_mode == "turbo":
             if RICH_AVAILABLE:
                 console.print("\n[bold green]🚀 Launching Turbo Scan...[/bold green]")
-            scan_results = await turbo_scan_mode(TARGET_IP, port_list)
+            scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
             scan_data = {
                 "scan_results": scan_results,
                 "target_ip": TARGET_IP,
@@ -2374,7 +2374,7 @@ async def main():
         elif scan_mode == "ghost":
             if RICH_AVAILABLE:
                 console.print("\n[bold magenta]🥷 Initiating Ghost Mode...[/bold magenta]")
-            scan_results = await ghost_scan_mode(TARGET_IP, port_list)
+            scan_results = await ghost_scan_mode(TARGET_IP, scan_ports)
             scan_data = {
                 "scan_results": scan_results,
                 "target_ip": TARGET_IP,
@@ -2385,18 +2385,18 @@ async def main():
         elif scan_mode == "intelligence":
             if RICH_AVAILABLE:
                 console.print("\n[bold cyan]🧠 Starting Intelligence Scan...[/bold cyan]")
-            scan_data = await intelligence_scan_mode(TARGET_IP, port_list)
+            scan_data = await intelligence_scan_mode(TARGET_IP, scan_ports)
 
         elif scan_mode == "cloud":
             if RICH_AVAILABLE:
                 console.print("\n[bold blue]☁️ Cloud Hunter Mode Activated...[/bold blue]")
-            scan_data = await cloud_hunter_mode(TARGET_IP, port_list)
+            scan_data = await cloud_hunter_mode(TARGET_IP, scan_ports)
 
         elif scan_mode == "deep":
             if RICH_AVAILABLE:
                 console.print("\n[bold red]🔍 Deep Probe Initiated...[/bold red]")
             # Deep probe uses intelligence scan with additional vulnerability checks
-            scan_data = await intelligence_scan_mode(TARGET_IP, port_list)
+            scan_data = await intelligence_scan_mode(TARGET_IP, scan_ports)
 
         elif scan_mode == "anonymous":
             if RICH_AVAILABLE:
@@ -2409,7 +2409,7 @@ async def main():
                 socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 9050)
                 socket.socket = socks.socksocket
 
-                scan_results = await ghost_scan_mode(TARGET_IP, port_list)  # Use ghost mode for anonymity
+                scan_results = await ghost_scan_mode(TARGET_IP, scan_ports)  # Use ghost mode for anonymity
                 scan_data = {
                     "scan_results": scan_results,
                     "target_ip": TARGET_IP,
@@ -2427,7 +2427,7 @@ async def main():
             if RICH_AVAILABLE:
                 console.print("\n[bold yellow]⚡ Legacy Mode - Classic Scanning[/bold yellow]")
             # Fall back to original scanning logic (simplified)
-            scan_results = await turbo_scan_mode(TARGET_IP, port_list)
+            scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
             scan_data = {
                 "scan_results": scan_results,
                 "target_ip": TARGET_IP,
@@ -2479,7 +2479,7 @@ if __name__ == "__main__":
 
         if user_scan_choice in ['1', '2', '3', '4', '5', '6']:
             TARGET_IP = get_target()
-            port_list = list(range(1, 1025))
+            legacy_ports = list(range(1, 1025))
 
             if RICH_AVAILABLE:
                 console.print(f"[yellow]⚠️ Running in legacy mode for {TARGET_IP}[/yellow]")
