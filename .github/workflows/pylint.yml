@@ -51,7 +51,7 @@ jobs:
     - name: Run Bandit Security Scan
       uses: PyCQA/bandit-action@v1
       with:
-        path: "."
+        targets: "."
     
     - name: Run Safety Check
       run: |
