@@ -151,24 +151,114 @@ CVE_DATABASE = {
 
 # Enhanced service signatures with ML-based fingerprinting
 SERVICE_SIGNATURES = {
-    22: {"name": "SSH", "probe": "", "pattern": r"SSH-(\d+\.\d+)", "ml_features": ["banner_length", "timing", "cipher_suites"]},
-    23: {"name": "Telnet", "probe": "", "pattern": r"login:|Username:|Password:", "ml_features": ["prompt_style", "timing"]},
-    25: {"name": "SMTP", "probe": "", "pattern": r"220.*SMTP", "ml_features": ["greeting_banner", "extensions"]},
-    53: {"name": "DNS", "probe": "", "pattern": r"", "ml_features": ["query_response", "recursion"]},
-    80: {"name": "HTTP", "probe": "GET / HTTP/1.1\r\n\r\n", "pattern": r"HTTP/", "ml_features": ["headers", "server_tokens", "response_size"]},
-    110: {"name": "POP3", "probe": "", "pattern": r"\+OK", "ml_features": ["welcome_message", "capabilities"]},
-    143: {"name": "IMAP", "probe": "", "pattern": r"\* OK", "ml_features": ["capabilities", "authentication"]},
-    443: {"name": "HTTPS", "probe": "", "pattern": r"", "ml_features": ["certificate", "cipher_suites", "tls_version"]},
-    993: {"name": "IMAPS", "probe": "", "pattern": r"\* OK", "ml_features": ["ssl_cert", "capabilities"]},
-    995: {"name": "POP3S", "probe": "", "pattern": r"\+OK", "ml_features": ["ssl_cert", "auth_methods"]},
-    3389: {"name": "RDP", "probe": "", "pattern": r"", "ml_features": ["rdp_version", "security_layers"]},
-    5432: {"name": "PostgreSQL", "probe": "", "pattern": r"", "ml_features": ["version_string", "auth_methods"]},
-    3306: {"name": "MySQL", "probe": "", "pattern": r"", "ml_features": ["version", "capabilities", "auth_plugin"]},
-    1433: {"name": "MSSQL", "probe": "", "pattern": r"", "ml_features": ["version", "instance_name"]},
-    21: {"name": "FTP", "probe": "", "pattern": r"220", "ml_features": ["banner", "features", "auth_methods"]},
-    6379: {"name": "Redis", "probe": "INFO\r\n", "pattern": r"redis_version", "ml_features": ["version", "modules", "config"]},
-    27017: {"name": "MongoDB", "probe": "", "pattern": r"", "ml_features": ["version", "build_info"]},
-    9200: {"name": "Elasticsearch", "probe": "", "pattern": r"elasticsearch", "ml_features": ["version", "cluster_info"]},
+    22: {
+        "name": "SSH",
+        "probe": "",
+        "pattern": r"SSH-(\d+\.\d+)",
+        "ml_features": ["banner_length", "timing", "cipher_suites"]
+    },
+    23: {
+        "name": "Telnet",
+        "probe": "",
+        "pattern": r"login:|Username:|Password:",
+        "ml_features": ["prompt_style", "timing"]
+    },
+    25: {
+        "name": "SMTP",
+        "probe": "",
+        "pattern": r"220.*SMTP",
+        "ml_features": ["greeting_banner", "extensions"]
+    },
+    53: {
+        "name": "DNS",
+        "probe": "",
+        "pattern": r"",
+        "ml_features": ["query_response", "recursion"]
+    },
+    80: {
+        "name": "HTTP",
+        "probe": "GET / HTTP/1.1\r\n\r\n",
+        "pattern": r"HTTP/",
+        "ml_features": ["headers", "server_tokens", "response_size"]
+    },
+    110: {
+        "name": "POP3",
+        "probe": "",
+        "pattern": r"\+OK",
+        "ml_features": ["welcome_message", "capabilities"]
+    },
+    143: {
+        "name": "IMAP",
+        "probe": "",
+        "pattern": r"\* OK",
+        "ml_features": ["capabilities", "authentication"]
+    },
+    443: {
+        "name": "HTTPS",
+        "probe": "",
+        "pattern": r"",
+        "ml_features": ["certificate", "cipher_suites", "tls_version"]
+    },
+    993: {
+        "name": "IMAPS",
+        "probe": "",
+        "pattern": r"\* OK",
+        "ml_features": ["ssl_cert", "capabilities"]
+    },
+    995: {
+        "name": "POP3S",
+        "probe": "",
+        "pattern": r"\+OK",
+        "ml_features": ["ssl_cert", "auth_methods"]
+    },
+    3389: {
+        "name": "RDP",
+        "probe": "",
+        "pattern": r"",
+        "ml_features": ["rdp_version", "security_layers"]
+    },
+    5432: {
+        "name": "PostgreSQL",
+        "probe": "",
+        "pattern": r"",
+        "ml_features": ["version_string", "auth_methods"]
+    },
+    3306: {
+        "name": "MySQL",
+        "probe": "",
+        "pattern": r"",
+        "ml_features": ["version", "capabilities", "auth_plugin"]
+    },
+    1433: {
+        "name": "MSSQL",
+        "probe": "",
+        "pattern": r"",
+        "ml_features": ["version", "instance_name"]
+    },
+    21: {
+        "name": "FTP",
+        "probe": "",
+        "pattern": r"220",
+        "ml_features": ["banner", "features", "auth_methods"]
+    },
+    6379: {
+        "name": "Redis",
+        "probe": "INFO\r\n",
+        "pattern": r"redis_version",
+        "ml_features": ["version", "modules", "config"]
+    },
+    27017: {
+        "name": "MongoDB",
+        "probe": "",
+        "pattern": r"",
+        "ml_features": ["version", "build_info"]
+    },
+    9200: {
+        "name": "Elasticsearch",
+        "probe": "",
+        "pattern": r"elasticsearch",
+        "ml_features": ["version", "cluster_info"]
+    },
 }
 
 # Cloud service detection patterns
@@ -179,12 +269,17 @@ CLOUD_SIGNATURES = {
         "ports": [80, 443, 8080]
     },
     "Azure": {
-        "metadata_endpoint": "http://169.254.169.254/metadata/instance?api-version=2021-02-01",
+        "metadata_endpoint": (
+            "http://169.254.169.254/metadata/instance"
+            "?api-version=2021-02-01"
+        ),
         "indicators": ["azure", "microsoft", "windowsazure"],
         "ports": [80, 443, 8080]
     },
     "GCP": {
-        "metadata_endpoint": "http://metadata.google.internal/computeMetadata/v1/",
+        "metadata_endpoint": (
+            "http://metadata.google.internal/computeMetadata/v1/"
+        ),
         "indicators": ["google", "gcp", "compute", "cloud"],
         "ports": [80, 443, 8080]
     },
@@ -202,11 +297,26 @@ CLOUD_SIGNATURES = {
 
 # IoT and embedded device signatures
 IOT_SIGNATURES = {
-    "camera": {"ports": [80, 443, 554, 8080], "indicators": ["camera", "webcam", "ipcam", "hikvision", "dahua"]},
-    "router": {"ports": [80, 443, 23, 22], "indicators": ["router", "gateway", "openwrt", "dd-wrt"]},
-    "printer": {"ports": [80, 443, 515, 631, 9100], "indicators": ["printer", "hp", "canon", "epson"]},
-    "nas": {"ports": [80, 443, 22, 21, 139, 445], "indicators": ["nas", "synology", "qnap", "freenas"]},
-    "iot_general": {"ports": [80, 443, 1883, 8883], "indicators": ["iot", "sensor", "smart", "device"]}
+    "camera": {
+        "ports": [80, 443, 554, 8080],
+        "indicators": ["camera", "webcam", "ipcam", "hikvision", "dahua"]
+    },
+    "router": {
+        "ports": [80, 443, 23, 22],
+        "indicators": ["router", "gateway", "openwrt", "dd-wrt"]
+    },
+    "printer": {
+        "ports": [80, 443, 515, 631, 9100],
+        "indicators": ["printer", "hp", "canon", "epson"]
+    },
+    "nas": {
+        "ports": [80, 443, 22, 21, 139, 445],
+        "indicators": ["nas", "synology", "qnap", "freenas"]
+    },
+    "iot_general": {
+        "ports": [80, 443, 1883, 8883],
+        "indicators": ["iot", "sensor", "smart", "device"]
+    }
 }
 
 # Common web application signatures
@@ -1204,116 +1314,6 @@ def query_shodan(ip):
         url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_API_KEY}"
         with urllib.request.urlopen(url, timeout=10) as response:
             data = json.loads(response.read().decode())
-
-        shodan_info = {
-            "organization": data.get("org", "Unknown"),
-            "isp": data.get("isp", "Unknown"),
-            "country": data.get("country_name", "Unknown"),
-            "city": data.get("city", "Unknown"),
-            "ports": data.get("ports", []),
-            "hostnames": data.get("hostnames", []),
-            "vulns": list(data.get("vulns", [])) if data.get("vulns") else [],
-            "tags": data.get("tags", [])
-        }
-        return shodan_info
-    except (urllib.error.URLError, json.JSONDecodeError, KeyError):
-        return None
-
-def detect_web_technologies(response_headers):
-    """Detect web technologies from HTTP response headers."""
-    technologies = []
-    full_response = " ".join(response_headers.split('\r\n'))
-
-    for pattern, tech_name in WEB_SIGNATURES:
-        if re.search(pattern, full_response, re.IGNORECASE):
-            technologies.append(tech_name)
-
-    return technologies
-
-def analyze_ssl_certificate(ip, ssl_port=443):
-    """Analyze SSL certificate for vulnerabilities and information."""
-    try:
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-
-        with socket.create_connection((ip, ssl_port), timeout=5) as sock:
-            with context.wrap_socket(sock, server_hostname=ip) as ssock:
-                cert = ssock.getpeercert(binary_form=False)
-
-                if cert:
-                    # Extract certificate information
-                    subject = dict(x[0] for x in cert.get('subject', []))
-                    issuer = dict(x[0] for x in cert.get('issuer', []))
-
-                    # Check certificate validity
-                    not_before = cert.get('notBefore')
-                    not_after = cert.get('notAfter')
-
-                    # Check for weak signature algorithms
-                    cert_info = {
-                        'common_name': subject.get('commonName', 'Unknown'),
-                        'issuer_org': issuer.get('organizationName', 'Unknown'),
-                        'valid_from': not_before,
-                        'valid_to': not_after,
-                        'serial_number': cert.get('serialNumber', 'Unknown'),
-                        'version': cert.get('version', 'Unknown'),
-                        'signature_algorithm': 'Unknown',  # Would need additional parsing
-                        'san': cert.get('subjectAltName', [])
-                    }
-
-                    # Basic vulnerability checks
-                    vulnerabilities = []
-                    if not_after:
-                        try:
-                            expiry = datetime.datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
-                            if expiry < datetime.datetime.now():
-                                vulnerabilities.append("Certificate expired")
-                        except ValueError:
-                            pass
-
-                    cert_info['vulnerabilities'] = vulnerabilities
-                    return cert_info
-
-    except (ssl.SSLError, socket.error, ValueError):
-        pass
-    return None
-
-def get_custom_port_range():
-    """Gets custom port range from user input."""
-    try:
-        start_port = int(input("Enter start port: "))
-        end_port = int(input("Enter end port: "))
-        return range(start_port, end_port + 1)
-    except ValueError:
-        print("[!] Invalid input. Please enter numbers only.")
-        return None
-
-def get_ports():
-    """Gets the port scanning option and range from the user."""
-    while True:
-        prompt = ("Select port range:\n1. Common Ports (1-1024)\n"
-                 "2. Custom Range\nEnter choice (1 or 2): ")
-        choice = input(prompt)
-        if choice == '1':
-            return range(1, 1025)
-        if choice == '2':
-            custom_range = get_custom_port_range()
-            if custom_range:
-                return custom_range
-            continue
-        print("[!] Invalid choice. Please enter 1 or 2.")
-
-def get_http_banner(sock):
-    """Get banner from HTTP port with enhanced web technology detection."""
-    try:
-        http_request = (b'GET / HTTP/1.1\r\nHost: ' + TARGET_IP.encode() +
-                       b'\r\nUser-Agent: Aura-sec/2.5.0\r\n\r\n')
-        sock.send(http_request)
-        response = sock.recv(4096).decode('utf-8', errors='ignore')
-
-        lines = response.split('\r\n')
-
         # Extract server information and web technologies
         server_info = ""
         tech_info = []
@@ -1781,7 +1781,13 @@ async def main():
                 if RICH_AVAILABLE:
                     console.print("[red]❌ Tor proxy not found. Please start Tor service.[/red]")
                 else:
+                    #adding tor services to anonymous scanner
                     print("[!] Tor proxy not found. Please start Tor service.")
+                    #  1. First download tor services from tor.com
+                    #  2. Install tor services
+                    #  3. Open terminal and start services
+                    #  caution if you using window you must run tor.exe from same installed folder of Tor
+                    #  5. tor service must run in port 9050
                 return
                 
         elif scan_mode == "legacy":
