@@ -4,13 +4,12 @@ Demo script to showcase Aura-sec v3.0.0 interactive reporting capabilities
 """
 
 import json
-import time
 from aurasec import ScanResult, create_interactive_report, create_enhanced_text_report
 
 # Create sample scan data to demonstrate reporting
 def create_demo_data():
     """Create realistic demo scan data."""
-    
+
     # Sample scan results
     scan_results = [
         ScanResult(
@@ -25,7 +24,7 @@ def create_demo_data():
         ),
         ScanResult(
             port=80,
-            status="open", 
+            status="open",
             service="HTTP",
             version="nginx/1.18.0 [CloudFlare]",
             vulnerabilities=[],
@@ -36,7 +35,7 @@ def create_demo_data():
         ScanResult(
             port=443,
             status="open",
-            service="HTTPS", 
+            service="HTTPS",
             version="TLS 1.3, CN: example.com",
             vulnerabilities=[],
             confidence=0.92,
@@ -64,7 +63,7 @@ def create_demo_data():
             threat_intel={"vulnerabilities": [{"cve_id": "CVE-2021-32626", "severity": "high"}]}
         )
     ]
-    
+
     # Complete scan data structure
     scan_data = {
         "scan_results": scan_results,
@@ -89,18 +88,18 @@ def create_demo_data():
             "version": "unknown"
         }
     }
-    
+
     return scan_data
 
 def main():
     """Generate demo reports."""
     print("🚀 Aura-sec v3.0.0 - Demo Report Generator")
     print("=" * 50)
-    
+
     # Create demo data
     print("📊 Creating demo scan data...")
     scan_data = create_demo_data()
-    
+
     # Generate interactive HTML report
     print("🎨 Generating interactive HTML report...")
     try:
@@ -108,7 +107,7 @@ def main():
         print("✅ Interactive HTML report created: demo_scan_report.html")
     except Exception as e:
         print(f"❌ Error creating HTML report: {e}")
-    
+
     # Generate enhanced text report
     print("📝 Generating enhanced text report...")
     try:
@@ -116,11 +115,11 @@ def main():
         print("✅ Enhanced text report created: demo_scan_report.txt")
     except Exception as e:
         print(f"❌ Error creating text report: {e}")
-    
+
     # Generate JSON report
     print("📋 Generating JSON report...")
     try:
-        with open("demo_scan_report.json", 'w') as f:
+        with open("demo_scan_report.json", 'w', encoding='utf-8') as f:
             # Convert ScanResult objects to dict for JSON serialization
             json_data = scan_data.copy()
             json_data["scan_results"] = [
@@ -138,13 +137,14 @@ def main():
         print("✅ JSON report created: demo_scan_report.json")
     except Exception as e:
         print(f"❌ Error creating JSON report: {e}")
-    
+
     print("\n🎯 Demo reports generated successfully!")
     print("📁 Files created:")
     print("   • demo_scan_report.html (Interactive)")
-    print("   • demo_scan_report.txt (Enhanced Text)")  
+    print("   • demo_scan_report.txt (Enhanced Text)")
     print("   • demo_scan_report.json (Machine Readable)")
     print("\n🌟 Open the HTML file in your browser to see the interactive features!")
+
 
 if __name__ == "__main__":
     main()
