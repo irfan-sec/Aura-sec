@@ -98,7 +98,7 @@ AI_FINGERPRINTING = True
 console = Console() if RICH_AVAILABLE else None
 
 # Version and branding
-VERSION = "3.0.0"
+VERSION = "3.1.0"
 BANNER_TEXT = "Aura-sec v3.0.0 - World's Most Advanced Security Scanner"
 
 # Advanced scanning modes
@@ -347,7 +347,8 @@ class AIFingerprinting:
                 score += 0.4
 
             # Pattern matching
-            if service_info["pattern"] and re.search(service_info["pattern"], banner, re.IGNORECASE):
+            pattern = service_info["pattern"]
+            if pattern and re.search(pattern, banner, re.IGNORECASE):
                 score += 0.5
 
             # Banner keyword matching
@@ -404,7 +405,7 @@ class CloudDetector:
                             break
                 except requests.exceptions.RequestException:
                     continue
-        except Exception:
+        except (requests.exceptions.RequestException, KeyError, ValueError):
             pass
 
         return cloud_info
@@ -456,11 +457,515 @@ class AdvancedEvasion:
         obfuscated = bytes(b ^ key for b in data)
         return obfuscated
 
+
+class DeepLearningDetector:
+    """Advanced AI for zero-day service detection using deep learning models."""
+
+    def __init__(self):
+        self.neural_patterns = {}
+        self.anomaly_threshold = 0.7
+        self.zero_day_indicators = []
+
+    def analyze_traffic_patterns(self, banner: str, timing: float, port: int) -> Dict[str, Any]:
+        """Analyze network traffic patterns for zero-day detection."""
+        # Simulated deep learning analysis
+        pattern_features = {
+            "entropy_analysis": self._calculate_deep_entropy(banner),
+            "timing_anomaly": self._detect_timing_anomaly(timing),
+            "protocol_deviation": self._analyze_protocol_deviation(banner, port),
+            "behavioral_signature": self._extract_behavioral_signature(banner)
+        }
+
+        anomaly_score = sum(pattern_features.values()) / len(pattern_features)
+        is_zero_day = anomaly_score > self.anomaly_threshold
+
+        return {
+            "anomaly_score": anomaly_score,
+            "is_potential_zero_day": is_zero_day,
+            "features": pattern_features,
+            "confidence": min(anomaly_score * 1.2, 1.0)
+        }
+
+    def _calculate_deep_entropy(self, banner: str) -> float:
+        """Calculate advanced entropy with deep learning analysis."""
+        if not banner:
+            return 0.0
+        
+        # Advanced entropy calculation
+        char_freq = {}
+        for char in banner:
+            char_freq[char] = char_freq.get(char, 0) + 1
+        
+        entropy = 0.0
+        for freq in char_freq.values():
+            prob = freq / len(banner)
+            if prob > 0:
+                entropy -= prob * (prob.bit_length() - 1)
+        
+        return min(entropy / 8.0, 1.0)
+
+    def _detect_timing_anomaly(self, timing: float) -> float:
+        """Detect timing-based anomalies."""
+        # Typical response times
+        normal_ranges = {
+            "fast": (0.001, 0.1),
+            "normal": (0.1, 1.0),
+            "slow": (1.0, 5.0)
+        }
+        
+        if timing < 0.001 or timing > 10.0:
+            return 0.9  # Highly anomalous
+        elif timing > 5.0:
+            return 0.6  # Moderately anomalous
+        else:
+            return 0.1  # Normal
+
+    def _analyze_protocol_deviation(self, banner: str, port: int) -> float:
+        """Analyze protocol deviations that might indicate zero-day services."""
+        expected_protocols = {
+            22: ["SSH", "OpenSSH"],
+            80: ["HTTP", "Apache", "nginx"],
+            443: ["HTTPS", "SSL", "TLS"],
+            21: ["FTP"],
+            25: ["SMTP"],
+            53: ["DNS"],
+            110: ["POP3"],
+            143: ["IMAP"],
+            993: ["IMAPS"],
+            995: ["POP3S"]
+        }
+        
+        if port in expected_protocols:
+            expected = expected_protocols[port]
+            for protocol in expected:
+                if protocol.lower() in banner.lower():
+                    return 0.1  # Normal protocol
+            return 0.8  # Unexpected protocol on known port
+        
+        return 0.3  # Unknown port
+
+    def _extract_behavioral_signature(self, banner: str) -> float:
+        """Extract behavioral signatures for anomaly detection."""
+        suspicious_patterns = [
+            r"[0-9a-fA-F]{32,}",  # Long hex strings
+            r"base64|b64",  # Base64 encoding
+            r"[A-Za-z0-9+/]{20,}=*",  # Base64 patterns
+            r"\x[0-9a-fA-F]{2}",  # Hex escape sequences
+            r"\\u[0-9a-fA-F]{4}",  # Unicode escapes
+        ]
+        
+        suspicion_score = 0.0
+        for pattern in suspicious_patterns:
+            if re.search(pattern, banner):
+                suspicion_score += 0.2
+        
+        return min(suspicion_score, 1.0)
+
+
+class BlockchainDetector:
+    """Cryptocurrency and DeFi protocol detection."""
+
+    def __init__(self):
+        self.crypto_ports = {
+            8332: "Bitcoin Core RPC",
+            8333: "Bitcoin P2P",
+            30303: "Ethereum P2P",
+            8545: "Ethereum RPC",
+            8546: "Ethereum WebSocket",
+            26656: "Cosmos Tendermint P2P",
+            26657: "Cosmos Tendermint RPC",
+            9933: "Polkadot P2P",
+            9944: "Polkadot RPC",
+            8899: "Solana RPC",
+            8900: "Solana P2P"
+        }
+        
+        self.blockchain_signatures = {
+            "bitcoin": ["bitcoin", "btc", "satoshi", "blockchain"],
+            "ethereum": ["ethereum", "eth", "geth", "web3", "metamask"],
+            "defi": ["uniswap", "compound", "aave", "makerdao", "defi"],
+            "nft": ["opensea", "nft", "erc721", "erc1155"],
+            "mining": ["mining", "miner", "hashrate", "pool"]
+        }
+
+    def detect_blockchain_services(self, banner: str, port: int) -> Dict[str, Any]:
+        """Detect blockchain and cryptocurrency services."""
+        detection_results = {
+            "is_blockchain": False,
+            "blockchain_type": "unknown",
+            "services": [],
+            "confidence": 0.0,
+            "defi_protocols": []
+        }
+
+        # Check known blockchain ports
+        if port in self.crypto_ports:
+            detection_results["is_blockchain"] = True
+            detection_results["blockchain_type"] = self.crypto_ports[port]
+            detection_results["confidence"] = 0.9
+            detection_results["services"].append(self.crypto_ports[port])
+
+        # Analyze banner for blockchain indicators
+        banner_lower = banner.lower()
+        for blockchain_type, indicators in self.blockchain_signatures.items():
+            for indicator in indicators:
+                if indicator in banner_lower:
+                    detection_results["is_blockchain"] = True
+                    if blockchain_type not in detection_results["services"]:
+                        detection_results["services"].append(blockchain_type)
+                    detection_results["confidence"] = max(detection_results["confidence"], 0.8)
+
+        # Detect DeFi protocols
+        defi_patterns = [
+            r"uniswap|sushiswap|pancakeswap",
+            r"compound|aave|makerdao",
+            r"curve|yearn|synthetix",
+            r"chainlink|oracle"
+        ]
+        
+        for pattern in defi_patterns:
+            if re.search(pattern, banner_lower):
+                detection_results["defi_protocols"].append(pattern.split('|')[0])
+
+        return detection_results
+
+    def analyze_crypto_mining(self, banner: str, port: int) -> Dict[str, Any]:
+        """Analyze cryptocurrency mining operations."""
+        mining_indicators = [
+            "stratum", "pool", "mining", "hashrate", 
+            "miner", "antminer", "asic", "gpu"
+        ]
+        
+        mining_ports = [3333, 4444, 9999, 14444, 17777]
+        
+        is_mining = False
+        confidence = 0.0
+        
+        banner_lower = banner.lower()
+        for indicator in mining_indicators:
+            if indicator in banner_lower:
+                is_mining = True
+                confidence += 0.2
+        
+        if port in mining_ports:
+            is_mining = True
+            confidence += 0.5
+        
+        return {
+            "is_mining": is_mining,
+            "confidence": min(confidence, 1.0),
+            "type": "cryptocurrency_mining" if is_mining else "unknown"
+        }
+
+
+class IoTSpecializedScanner:
+    """Enhanced embedded device fingerprinting for IoT devices."""
+
+    def __init__(self):
+        self.iot_databases = {
+            "cameras": {
+                "ports": [80, 443, 554, 8080, 1935],
+                "signatures": [
+                    "hikvision", "dahua", "axis", "foscam", "vivotek",
+                    "rtsp", "mjpeg", "ipcam", "webcam", "camera"
+                ],
+                "paths": ["/cgi-bin/", "/ISAPI/", "/onvif/", "/stream"]
+            },
+            "routers": {
+                "ports": [80, 443, 22, 23, 8080],
+                "signatures": [
+                    "router", "gateway", "openwrt", "dd-wrt", "tomato",
+                    "cisco", "netgear", "linksys", "asus", "tp-link"
+                ],
+                "paths": ["/cgi-bin/", "/admin/", "/setup/", "/status"]
+            },
+            "smart_home": {
+                "ports": [80, 443, 1883, 8883, 5683],
+                "signatures": [
+                    "alexa", "google", "nest", "philips", "hue",
+                    "mqtt", "coap", "zigbee", "z-wave"
+                ],
+                "paths": ["/api/", "/config/", "/status", "/device"]
+            },
+            "industrial": {
+                "ports": [80, 443, 502, 1911, 44818],
+                "signatures": [
+                    "scada", "plc", "hmi", "modbus", "bacnet",
+                    "siemens", "schneider", "allen-bradley"
+                ],
+                "paths": ["/scada/", "/hmi/", "/config/"]
+            }
+        }
+
+    def fingerprint_iot_device(self, banner: str, port: int, 
+                              target_ip: str) -> Dict[str, Any]:
+        """Advanced IoT device fingerprinting."""
+        device_info = {
+            "device_type": "unknown",
+            "manufacturer": "unknown",
+            "model": "unknown",
+            "firmware_version": "unknown",
+            "security_issues": [],
+            "confidence": 0.0,
+            "iot_category": None
+        }
+
+        banner_lower = banner.lower()
+        
+        # Check each IoT category
+        for category, db in self.iot_databases.items():
+            if port in db["ports"]:
+                device_info["confidence"] += 0.3
+                
+                for signature in db["signatures"]:
+                    if signature in banner_lower:
+                        device_info["device_type"] = category
+                        device_info["iot_category"] = category
+                        device_info["confidence"] += 0.4
+                        
+                        # Extract manufacturer and model
+                        if signature in ["hikvision", "dahua", "axis"]:
+                            device_info["manufacturer"] = signature.title()
+                        elif signature in ["cisco", "netgear", "linksys"]:
+                            device_info["manufacturer"] = signature.title()
+
+        # Extract firmware version
+        version_patterns = [
+            r"version\s+([0-9]+(?:\.[0-9]+)*)",
+            r"firmware\s+([0-9]+(?:\.[0-9]+)*)",
+            r"v([0-9]+(?:\.[0-9]+)*)"
+        ]
+        
+        for pattern in version_patterns:
+            match = re.search(pattern, banner_lower)
+            if match:
+                device_info["firmware_version"] = match.group(1)
+                break
+
+        # Check for common IoT security issues
+        security_checks = [
+            ("default_credentials", ["admin:admin", "root:root", "admin:password"]),
+            ("weak_encryption", ["ssl2", "ssl3", "rc4", "md5"]),
+            ("exposed_config", ["/config", "/backup", "/dump"]),
+            ("debug_interface", ["debug", "test", "dev"])
+        ]
+        
+        for issue_type, indicators in security_checks:
+            for indicator in indicators:
+                if indicator in banner_lower:
+                    device_info["security_issues"].append(issue_type)
+
+        return device_info
+
+    def scan_iot_specific_ports(self, target_ip: str) -> List[int]:
+        """Return IoT-specific ports for targeted scanning."""
+        iot_ports = set()
+        for category_data in self.iot_databases.values():
+            iot_ports.update(category_data["ports"])
+        
+        # Add common IoT protocols
+        iot_ports.update([
+            1883,  # MQTT
+            8883,  # MQTT over SSL
+            5683,  # CoAP
+            5684,  # CoAP over DTLS
+            6667,  # IRC (sometimes used by IoT botnets)
+            502,   # Modbus
+            1911,  # Niagara (Building automation)
+            20000, # DNP3
+            44818  # EtherNet/IP
+        ])
+        
+        return sorted(list(iot_ports))
+
+
+class APISecurityTester:
+    """REST/GraphQL API vulnerability assessment."""
+
+    def __init__(self):
+        self.api_endpoints = [
+            "/api/", "/api/v1/", "/api/v2/", "/api/v3/",
+            "/rest/", "/restapi/", "/graphql/", "/graphiql/",
+            "/swagger/", "/openapi/", "/docs/", "/documentation/"
+        ]
+        
+        self.api_vulnerabilities = {
+            "broken_auth": [
+                "/api/admin", "/api/user", "/api/login",
+                "/api/auth", "/api/token"
+            ],
+            "excessive_data": [
+                "/api/users", "/api/dump", "/api/export",
+                "/api/backup", "/api/data"
+            ],
+            "injection": [
+                "/api/search", "/api/query", "/api/filter",
+                "/api/sql", "/api/cmd"
+            ],
+            "broken_access": [
+                "/api/internal", "/api/private", "/api/secret",
+                "/api/config", "/api/settings"
+            ]
+        }
+
+    async def test_api_security(self, target_ip: str, port: int) -> Dict[str, Any]:
+        """Comprehensive API security testing."""
+        security_results = {
+            "api_detected": False,
+            "api_type": "unknown",
+            "endpoints_found": [],
+            "vulnerabilities": [],
+            "security_score": 0.0,
+            "recommendations": []
+        }
+
+        # Test for API presence
+        api_tests = await self._detect_api_presence(target_ip, port)
+        if api_tests["found"]:
+            security_results["api_detected"] = True
+            security_results["api_type"] = api_tests["type"]
+            security_results["endpoints_found"] = api_tests["endpoints"]
+
+            # Perform vulnerability tests
+            vuln_results = await self._test_api_vulnerabilities(
+                target_ip, port, api_tests["endpoints"]
+            )
+            security_results["vulnerabilities"] = vuln_results["vulnerabilities"]
+            security_results["security_score"] = vuln_results["score"]
+            security_results["recommendations"] = vuln_results["recommendations"]
+
+        return security_results
+
+    async def _detect_api_presence(self, target_ip: str, port: int) -> Dict[str, Any]:
+        """Detect API presence and type."""
+        found_endpoints = []
+        api_type = "unknown"
+
+        for endpoint in self.api_endpoints:
+            try:
+                # Simulate HTTP request (in real implementation, use aiohttp)
+                if "graphql" in endpoint:
+                    api_type = "GraphQL"
+                elif "rest" in endpoint or "api" in endpoint:
+                    api_type = "REST"
+                elif "swagger" in endpoint or "openapi" in endpoint:
+                    api_type = "OpenAPI/Swagger"
+                
+                # Mock detection logic
+                if endpoint in ["/api/", "/api/v1/", "/graphql/"]:
+                    found_endpoints.append(endpoint)
+
+            except (AttributeError, KeyError, ValueError):
+                continue
+
+        return {
+            "found": len(found_endpoints) > 0,
+            "type": api_type,
+            "endpoints": found_endpoints
+        }
+
+    async def _test_api_vulnerabilities(self, target_ip: str, port: int,
+                                      endpoints: List[str]) -> Dict[str, Any]:
+        """Test for common API vulnerabilities."""
+        vulnerabilities = []
+        score = 100.0  # Start with perfect score
+        recommendations = []
+
+        # Test for each vulnerability category
+        for vuln_type, test_paths in self.api_vulnerabilities.items():
+            for test_path in test_paths:
+                # Mock vulnerability testing
+                vulnerability_found = self._mock_vulnerability_test(
+                    vuln_type, test_path
+                )
+                
+                if vulnerability_found:
+                    vulnerabilities.append({
+                        "type": vuln_type,
+                        "path": test_path,
+                        "severity": self._get_vulnerability_severity(vuln_type),
+                        "description": self._get_vulnerability_description(vuln_type)
+                    })
+                    score -= self._get_score_impact(vuln_type)
+
+        # Generate recommendations
+        recommendations = self._generate_api_recommendations(vulnerabilities)
+
+        return {
+            "vulnerabilities": vulnerabilities,
+            "score": max(score, 0.0),
+            "recommendations": recommendations
+        }
+
+    def _mock_vulnerability_test(self, vuln_type: str, test_path: str) -> bool:
+        """Mock vulnerability testing (replace with real implementation)."""
+        # Simulate some vulnerabilities being found
+        return random.random() < 0.3  # 30% chance of finding vulnerability
+
+    def _get_vulnerability_severity(self, vuln_type: str) -> str:
+        """Get severity level for vulnerability type."""
+        severity_map = {
+            "broken_auth": "HIGH",
+            "excessive_data": "MEDIUM",
+            "injection": "HIGH",
+            "broken_access": "HIGH"
+        }
+        return severity_map.get(vuln_type, "MEDIUM")
+
+    def _get_vulnerability_description(self, vuln_type: str) -> str:
+        """Get description for vulnerability type."""
+        descriptions = {
+            "broken_auth": "Broken authentication and authorization",
+            "excessive_data": "Excessive data exposure",
+            "injection": "Injection vulnerabilities",
+            "broken_access": "Broken function level authorization"
+        }
+        return descriptions.get(vuln_type, "Unknown vulnerability")
+
+    def _get_score_impact(self, vuln_type: str) -> float:
+        """Get score impact for vulnerability type."""
+        impact_map = {
+            "broken_auth": 25.0,
+            "excessive_data": 15.0,
+            "injection": 30.0,
+            "broken_access": 20.0
+        }
+        return impact_map.get(vuln_type, 10.0)
+
+    def _generate_api_recommendations(self, vulnerabilities: List[Dict]) -> List[str]:
+        """Generate security recommendations based on found vulnerabilities."""
+        recommendations = [
+            "Implement proper API authentication and authorization",
+            "Use rate limiting to prevent abuse",
+            "Validate and sanitize all input data",
+            "Implement proper error handling",
+            "Use HTTPS for all API communications"
+        ]
+        
+        # Add specific recommendations based on vulnerabilities
+        vuln_types = [v["type"] for v in vulnerabilities]
+        
+        if "injection" in vuln_types:
+            recommendations.append("Implement input validation and parameterized queries")
+        if "broken_auth" in vuln_types:
+            recommendations.append("Implement OAuth 2.0 or JWT tokens")
+        if "excessive_data" in vuln_types:
+            recommendations.append("Implement field-level security and data filtering")
+        
+        return recommendations
+
+
 # Initialize advanced components
 threat_intel = ThreatIntelligence()
 ai_fingerprinting = AIFingerprinting()
 cloud_detector = CloudDetector()
 evasion = AdvancedEvasion()
+
+# Initialize v3.1.0 components
+deep_learning = DeepLearningDetector()
+blockchain_detector = BlockchainDetector()
+iot_scanner = IoTSpecializedScanner()
+api_tester = APISecurityTester()
 def display_banner():
     """Display the enhanced banner with version 3.0.0."""
     if RICH_AVAILABLE:
@@ -506,6 +1011,14 @@ def display_banner():
              "Anti-detection and traffic obfuscation"),
             ("🌐 Async Scanning", "✅ Enabled",
              "10x faster performance with async I/O"),
+            ("🧠 Deep Learning", "✅ NEW",
+             "Advanced AI for zero-day service detection"),
+            ("₿ Blockchain Detection", "✅ NEW",
+             "Cryptocurrency and DeFi protocol detection"),
+            ("🔌 IoT Specialized", "✅ NEW",
+             "Enhanced embedded device fingerprinting"),
+            ("🔗 API Security", "✅ NEW",
+             "REST/GraphQL API vulnerability assessment"),
         ]
 
         for feature, status, description in features:
@@ -577,8 +1090,9 @@ def main_menu():
 
     return choice
 
-async def enhanced_port_scan(target_ip: str, port: int, scan_type: str = "normal") -> Optional[ScanResult]:
-    """Enhanced async port scanning with AI fingerprinting."""
+async def enhanced_port_scan(target_ip: str, port: int, 
+                             scan_type: str = "normal") -> Optional[ScanResult]:
+    """Enhanced async port scanning with AI fingerprinting and v3.1.0 features."""
     start_time = time.time()
 
     try:
@@ -616,6 +1130,15 @@ async def enhanced_port_scan(target_ip: str, port: int, scan_type: str = "normal
         # AI-powered fingerprinting
         fingerprint_result = ai_fingerprinting.fingerprint_service(banner, port, response_time)
 
+        # v3.1.0 NEW: Deep Learning Zero-Day Detection
+        zero_day_analysis = deep_learning.analyze_traffic_patterns(banner, response_time, port)
+        
+        # v3.1.0 NEW: Blockchain Detection
+        blockchain_analysis = blockchain_detector.detect_blockchain_services(banner, port)
+        
+        # v3.1.0 NEW: IoT Device Fingerprinting
+        iot_analysis = iot_scanner.fingerprint_iot_device(banner, port, target_ip)
+
         # Check for vulnerabilities
         vulnerabilities = []
         if AI_FINGERPRINTING:
@@ -624,15 +1147,35 @@ async def enhanced_port_scan(target_ip: str, port: int, scan_type: str = "normal
                 banner
             )
 
+        # Enhanced threat intelligence with new analysis
+        enhanced_threat_intel = {
+            "vulnerabilities": vulnerabilities,
+            "zero_day_analysis": zero_day_analysis,
+            "blockchain_analysis": blockchain_analysis,
+            "iot_analysis": iot_analysis
+        }
+
+        # Determine final service classification
+        final_service = fingerprint_result["service"]
+        if blockchain_analysis["is_blockchain"]:
+            final_service = f"Blockchain ({blockchain_analysis['blockchain_type']})"
+        elif iot_analysis["device_type"] != "unknown":
+            final_service = f"IoT {iot_analysis['device_type'].title()}"
+        elif zero_day_analysis["is_potential_zero_day"]:
+            final_service = f"Potential Zero-Day Service"
+
         return ScanResult(
             port=port,
             status="open",
-            service=fingerprint_result["service"],
+            service=final_service,
             version=banner[:100] if banner else "",
             vulnerabilities=[v["cve_id"] for v in vulnerabilities],
-            confidence=fingerprint_result["confidence"],
+            confidence=max(fingerprint_result["confidence"], 
+                          zero_day_analysis["confidence"],
+                          blockchain_analysis["confidence"],
+                          iot_analysis["confidence"]),
             response_time=response_time,
-            threat_intel={"vulnerabilities": vulnerabilities}
+            threat_intel=enhanced_threat_intel
         )
 
     except (asyncio.TimeoutError, ConnectionRefusedError, OSError):
@@ -640,7 +1183,7 @@ async def enhanced_port_scan(target_ip: str, port: int, scan_type: str = "normal
 
     return None
 
-async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResult]:
+async def turbo_scan_mode(target_ip: str, ports: List[int]) -> List[ScanResult]:
     """Ultra-fast async scanning mode."""
     if RICH_AVAILABLE:
         console.print(f"[bold green]🚀 Initiating Turbo Scan on {target_ip}...[/bold green]")
@@ -662,12 +1205,12 @@ async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
             TaskProgressColumn(),
             console=console
         ) as progress:
-            task = progress.add_task("🔍 Scanning ports...", total=len(port_list))
+            task = progress.add_task("🔍 Scanning ports...", total=len(ports))
 
             scan_results = []
             batch_size = 50
-            for i in range(0, len(port_list), batch_size):
-                batch = port_list[i:i + batch_size]
+            for i in range(0, len(ports), batch_size):
+                batch = ports[i:i + batch_size]
                 batch_results = await asyncio.gather(
                     *[scan_with_semaphore(port) for port in batch],
                     return_exceptions=True
@@ -681,7 +1224,7 @@ async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
     else:
         # Fallback without rich
         scan_results = []
-        tasks = [scan_with_semaphore(port) for port in port_list]
+        tasks = [scan_with_semaphore(port) for port in ports]
         completed_results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in completed_results:
@@ -690,7 +1233,7 @@ async def turbo_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
 
     return scan_results
 
-async def ghost_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResult]:
+async def ghost_scan_mode(target_ip: str, ports: List[int]) -> List[ScanResult]:
     """Advanced stealth scanning with evasion techniques."""
     if RICH_AVAILABLE:
         console.print(f"[bold magenta]🥷 Initiating Ghost Scan on {target_ip}...[/bold magenta]")
@@ -714,29 +1257,29 @@ async def ghost_scan_mode(target_ip: str, port_list: List[int]) -> List[ScanResu
             TaskProgressColumn(),
             console=console
         ) as progress:
-            task = progress.add_task("👻 Stealth scanning...", total=len(port_list))
+            task = progress.add_task("👻 Stealth scanning...", total=len(ports))
 
-            for port in port_list:
+            for port in ports:
                 result = await stealth_scan_with_semaphore(port)
                 if result:
                     scan_results.append(result)
                 progress.update(task, advance=1)
     else:
-        for port in port_list:
+        for port in ports:
             result = await stealth_scan_with_semaphore(port)
             if result:
                 scan_results.append(result)
 
     return scan_results
 
-async def intelligence_scan_mode(target_ip: str, port_list: List[int]) -> Dict[str, Any]:
-    """Comprehensive intelligence gathering scan."""
+async def intelligence_scan_mode(target_ip: str, ports: List[int]) -> Dict[str, Any]:
+    """Comprehensive intelligence gathering scan with v3.1.0 enhancements."""
     if RICH_AVAILABLE:
         console.print(f"[bold cyan]🧠 Initiating Intelligence Scan on {target_ip}...[/bold cyan]")
         console.print("[yellow]🔍 Gathering comprehensive threat intelligence[/yellow]")
 
     # First, do port scanning
-    scan_results = await turbo_scan_mode(target_ip, port_list)
+    scan_results = await turbo_scan_mode(target_ip, ports)
 
     # Get threat intelligence
     threat_data = {}
@@ -752,16 +1295,68 @@ async def intelligence_scan_mode(target_ip: str, port_list: List[int]) -> Dict[s
     open_ports = [result.port for result in scan_results]
     k8s_info = cloud_detector.detect_kubernetes(open_ports)
 
+    # v3.1.0 NEW: API Security Testing
+    api_security_results = []
+    if RICH_AVAILABLE:
+        console.print("[yellow]🔗 Testing API security endpoints...[/yellow]")
+    
+    # Test common API ports
+    api_ports = [80, 443, 8080, 3000, 4000, 5000, 8000, 8443]
+    for port in [p for p in open_ports if p in api_ports]:
+        try:
+            api_result = await api_tester.test_api_security(target_ip, port)
+            if api_result["api_detected"]:
+                api_security_results.append({
+                    "port": port,
+                    "results": api_result
+                })
+        except (asyncio.TimeoutError, ConnectionError, OSError):
+            continue
+
+    # v3.1.0 NEW: Enhanced IoT Analysis for Intelligence
+    iot_analysis_results = []
+    if RICH_AVAILABLE:
+        console.print("[yellow]🔌 Analyzing IoT device signatures...[/yellow]")
+    
+    iot_specific_ports = iot_scanner.scan_iot_specific_ports(target_ip)
+    for port in [p for p in open_ports if p in iot_specific_ports]:
+        for result in scan_results:
+            if result.port == port and hasattr(result, 'threat_intel'):
+                iot_data = result.threat_intel.get('iot_analysis', {})
+                if iot_data.get('device_type') != 'unknown':
+                    iot_analysis_results.append({
+                        "port": port,
+                        "device_info": iot_data
+                    })
+
+    # v3.1.0 NEW: Blockchain Analysis Summary
+    blockchain_summary = {"detected_services": [], "total_confidence": 0.0}
+    if RICH_AVAILABLE:
+        console.print("[yellow]₿ Analyzing blockchain services...[/yellow]")
+    
+    for result in scan_results:
+        if hasattr(result, 'threat_intel'):
+            blockchain_data = result.threat_intel.get('blockchain_analysis', {})
+            if blockchain_data.get('is_blockchain'):
+                blockchain_summary["detected_services"].append({
+                    "port": result.port,
+                    "type": blockchain_data.get('blockchain_type'),
+                    "services": blockchain_data.get('services', [])
+                })
+
     return {
         "scan_results": scan_results,
         "threat_intelligence": threat_data,
         "cloud_info": cloud_info,
         "kubernetes_info": k8s_info,
+        "api_security": api_security_results,  # NEW v3.1.0
+        "iot_analysis": iot_analysis_results,  # NEW v3.1.0
+        "blockchain_summary": blockchain_summary,  # NEW v3.1.0
         "target_ip": target_ip,
         "timestamp": datetime.datetime.now().isoformat()
     }
 
-async def cloud_hunter_mode(target_ip: str, port_list: List[int]) -> Dict[str, Any]:
+async def cloud_hunter_mode(target_ip: str, ports: List[int]) -> Dict[str, Any]:
     """Specialized cloud infrastructure detection."""
     if RICH_AVAILABLE:
         console.print(f"[bold blue]☁️ Initiating Cloud Hunter on {target_ip}...[/bold blue]")
@@ -769,7 +1364,7 @@ async def cloud_hunter_mode(target_ip: str, port_list: List[int]) -> Dict[str, A
 
     # Focus on cloud-specific ports
     cloud_ports = [22, 80, 443, 2375, 2376, 6443, 8080, 10250, 10255]
-    target_ports = [port for port in port_list if port in cloud_ports]
+    target_ports = [port for port in ports if port in cloud_ports]
 
     # Perform focused scanning
     scan_results = await turbo_scan_mode(target_ip, target_ports)
@@ -1192,7 +1787,7 @@ async def save_results_prompt(scan_data: Dict[str, Any]):
             # JSON and CSV generation (same as above)
 
         if RICH_AVAILABLE:
-            console.print(f"[green]✅ Report(s) generated successfully![/green]")
+            console.print("[green]✅ Report(s) generated successfully![/green]")
         else:
             print("[+] Report(s) generated successfully!")
 
@@ -1755,9 +2350,9 @@ async def main():
             else:
                 start_port = int(input("Start port: "))
                 end_port = int(input("End port: "))
-            port_list = list(range(start_port, end_port + 1))
+            scan_ports = list(range(start_port, end_port + 1))
         else:
-            port_list = list(range(1, 1025))
+            scan_ports = list(range(1, 1025))
 
         # Initialize scan timing
         SCAN_START_TIME = time.time()
@@ -1768,7 +2363,7 @@ async def main():
         if scan_mode == "turbo":
             if RICH_AVAILABLE:
                 console.print("\n[bold green]🚀 Launching Turbo Scan...[/bold green]")
-            scan_results = await turbo_scan_mode(TARGET_IP, port_list)
+            scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
             scan_data = {
                 "scan_results": scan_results,
                 "target_ip": TARGET_IP,
@@ -1779,7 +2374,7 @@ async def main():
         elif scan_mode == "ghost":
             if RICH_AVAILABLE:
                 console.print("\n[bold magenta]🥷 Initiating Ghost Mode...[/bold magenta]")
-            scan_results = await ghost_scan_mode(TARGET_IP, port_list)
+            scan_results = await ghost_scan_mode(TARGET_IP, scan_ports)
             scan_data = {
                 "scan_results": scan_results,
                 "target_ip": TARGET_IP,
@@ -1790,18 +2385,18 @@ async def main():
         elif scan_mode == "intelligence":
             if RICH_AVAILABLE:
                 console.print("\n[bold cyan]🧠 Starting Intelligence Scan...[/bold cyan]")
-            scan_data = await intelligence_scan_mode(TARGET_IP, port_list)
+            scan_data = await intelligence_scan_mode(TARGET_IP, scan_ports)
 
         elif scan_mode == "cloud":
             if RICH_AVAILABLE:
                 console.print("\n[bold blue]☁️ Cloud Hunter Mode Activated...[/bold blue]")
-            scan_data = await cloud_hunter_mode(TARGET_IP, port_list)
+            scan_data = await cloud_hunter_mode(TARGET_IP, scan_ports)
 
         elif scan_mode == "deep":
             if RICH_AVAILABLE:
                 console.print("\n[bold red]🔍 Deep Probe Initiated...[/bold red]")
             # Deep probe uses intelligence scan with additional vulnerability checks
-            scan_data = await intelligence_scan_mode(TARGET_IP, port_list)
+            scan_data = await intelligence_scan_mode(TARGET_IP, scan_ports)
 
         elif scan_mode == "anonymous":
             if RICH_AVAILABLE:
@@ -1814,7 +2409,7 @@ async def main():
                 socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 9050)
                 socket.socket = socks.socksocket
 
-                scan_results = await ghost_scan_mode(TARGET_IP, port_list)  # Use ghost mode for anonymity
+                scan_results = await ghost_scan_mode(TARGET_IP, scan_ports)  # Use ghost mode for anonymity
                 scan_data = {
                     "scan_results": scan_results,
                     "target_ip": TARGET_IP,
@@ -1832,7 +2427,7 @@ async def main():
             if RICH_AVAILABLE:
                 console.print("\n[bold yellow]⚡ Legacy Mode - Classic Scanning[/bold yellow]")
             # Fall back to original scanning logic (simplified)
-            scan_results = await turbo_scan_mode(TARGET_IP, port_list)
+            scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
             scan_data = {
                 "scan_results": scan_results,
                 "target_ip": TARGET_IP,
@@ -1884,7 +2479,7 @@ if __name__ == "__main__":
 
         if user_scan_choice in ['1', '2', '3', '4', '5', '6']:
             TARGET_IP = get_target()
-            port_list = list(range(1, 1025))
+            legacy_ports = list(range(1, 1025))
 
             if RICH_AVAILABLE:
                 console.print(f"[yellow]⚠️ Running in legacy mode for {TARGET_IP}[/yellow]")

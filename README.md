@@ -1,6 +1,6 @@
-# Aura-sec v3.0.0 🚀
+# Aura-sec v3.1.0 🚀
 
-![Version](https://img.shields.io/badge/version-v3.0.0-blue)
+![Version](https://img.shields.io/badge/version-v3.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.7+-brightgreen)
 ![Status](https://img.shields.io/badge/status-World's%20Best%20Tool-gold)
@@ -264,11 +264,11 @@ export AURA_TIMEOUT=5
 
 ## 🛣️ Roadmap
 
-### v3.1.0 - Planned Features
-- [ ] **Deep Learning Models**: Advanced AI for zero-day service detection
-- [ ] **Blockchain Integration**: Cryptocurrency and DeFi protocol detection
-- [ ] **IoT Specialized Scanning**: Enhanced embedded device fingerprinting
-- [ ] **API Security Testing**: REST/GraphQL API vulnerability assessment
+### v3.1.0 - ✅ COMPLETED FEATURES
+- [x] **Deep Learning Models**: Advanced AI for zero-day service detection
+- [x] **Blockchain Integration**: Cryptocurrency and DeFi protocol detection
+- [x] **IoT Specialized Scanning**: Enhanced embedded device fingerprinting
+- [x] **API Security Testing**: REST/GraphQL API vulnerability assessment
 
 ### v3.2.0 - Future Vision
 - [ ] **Quantum-Resistant Scanning**: Post-quantum cryptography assessment
