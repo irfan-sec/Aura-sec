@@ -1,4 +1,4 @@
-# Aura-sec v3.1.0 🚀
+# Aura-sec v3.1.1 🚀
 
 ![Version](https://img.shields.io/badge/version-v3.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
