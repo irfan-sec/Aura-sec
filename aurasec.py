@@ -1969,10 +1969,9 @@ def get_http_banner(sock):
 
             if server_info:
                 return f"HTTP - {server_info}"
-            elif "HTTP/" in status_line:
+            if "HTTP/" in status_line:
                 return f"HTTP - {status_line}"
-            else:
-                return "HTTP"
+            return "HTTP"
         return "HTTP"
     except socket.error:
         return "HTTP"
@@ -1997,7 +1996,7 @@ def analyze_ssl_certificate(host, port):
         pass
     return None
 
-def detect_web_technologies(response_data):
+def detect_web_technologies(response_data):  # pylint: disable=unused-argument
     """Detect web technologies from response data."""
     # Basic implementation that returns empty list
     # In a full implementation, this would analyze headers and content
@@ -2430,7 +2429,7 @@ async def main():
             console.print("\n[yellow]⏹️ Scan interrupted by user[/yellow]")
         else:
             print("\n[!] Scan interrupted by user")
-    except Exception as e:
+    except (KeyboardInterrupt, SystemExit, OSError, ValueError) as e:
         if RICH_AVAILABLE:
             console.print(f"\n[red]❌ An error occurred: {e}[/red]")
         else:
@@ -2441,7 +2440,7 @@ if __name__ == "__main__":
     try:
         # Try to run async main
         asyncio.run(main())
-    except Exception as e:
+    except (OSError, ValueError, ImportError) as e:
         print(f"[!] Error running async mode: {e}")
         print("[*] Falling back to legacy mode...")
 
