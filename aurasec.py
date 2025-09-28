@@ -1,5 +1,5 @@
 """
-Aura-sec v3.0.0 - The World's Most Advanced Open-Source Security Scanner
+Aura-sec v3.1.1 - The World's Most Advanced Open-Source Security Scanner
 A revolutionary cybersecurity reconnaissance tool with AI-powered features.
 
 Features:
@@ -98,8 +98,8 @@ AI_FINGERPRINTING = True
 console = Console() if RICH_AVAILABLE else None
 
 # Version and branding
-VERSION = "3.1.0"
-BANNER_TEXT = "Aura-sec v3.0.0 - World's Most Advanced Security Scanner"
+VERSION = "3.1.1"
+BANNER_TEXT = "Aura-sec v3.1.1 - World's Most Advanced Security Scanner"
 
 # Advanced scanning modes
 @dataclass
@@ -128,37 +128,96 @@ CVE_DATABASE = {
     "SSH": {
         "OpenSSH_7.4": ["CVE-2018-15473", "CVE-2016-6210"],
         "OpenSSH_6.6": ["CVE-2016-0777", "CVE-2016-0778"],
+        "OpenSSH_8.0": ["CVE-2019-6109", "CVE-2019-6111"],
+        "OpenSSH_8.1": ["CVE-2020-14145"],
+        "OpenSSH_9.0": ["CVE-2021-41617"],
+        "OpenSSH_8.5": ["CVE-2021-28041"],
     },
     "HTTP": {
         "Apache/2.4.41": ["CVE-2019-0197", "CVE-2019-0196"],
         "nginx/1.14.0": ["CVE-2019-20372"],
+        "Apache/2.4.49": ["CVE-2021-41773", "CVE-2021-42013"],
+        "Apache/2.4.50": ["CVE-2021-44224", "CVE-2021-44790"],
+        "nginx/1.20.0": ["CVE-2021-23017"],
+        "IIS/10.0": ["CVE-2022-21907", "CVE-2022-30190"],
     },
     "HTTPS": {
         "OpenSSL/1.0.1": ["CVE-2014-0160"],  # Heartbleed
         "OpenSSL/1.0.2": ["CVE-2016-2107"],
+        "OpenSSL/1.1.1": ["CVE-2022-0778", "CVE-2021-3711"],
+        "OpenSSL/3.0.0": ["CVE-2022-3602", "CVE-2022-3786"],
+    },
+    "FTP": {
+        "vsftpd/3.0.3": ["CVE-2021-3618"],
+        "ProFTPD/1.3.6": ["CVE-2019-12815", "CVE-2020-9272"],
+        "FileZilla/0.9.60": ["CVE-2021-40732"],
+    },
+    "MySQL": {
+        "MySQL/5.7.29": ["CVE-2020-2760", "CVE-2020-2812"],
+        "MySQL/8.0.19": ["CVE-2020-14567", "CVE-2020-14559"],
+        "MySQL/8.0.27": ["CVE-2022-21245", "CVE-2022-21270"],
+    },
+    "PostgreSQL": {
+        "PostgreSQL/12.0": ["CVE-2020-1720", "CVE-2019-10208"],
+        "PostgreSQL/13.0": ["CVE-2021-32027", "CVE-2021-32028"],
+        "PostgreSQL/14.0": ["CVE-2022-1552"],
+    },
+    "Redis": {
+        "Redis/6.0.0": ["CVE-2021-32625", "CVE-2021-32627"],
+        "Redis/6.2.0": ["CVE-2021-32672", "CVE-2021-32675"],
+    },
+    "MongoDB": {
+        "MongoDB/4.4.0": ["CVE-2021-20329"],
+        "MongoDB/5.0.0": ["CVE-2021-32563"],
+    },
+    "Docker": {
+        "Docker/20.10.0": ["CVE-2021-21284", "CVE-2021-21285"],
+        "Docker/19.03.0": ["CVE-2019-14271", "CVE-2019-16884"],
+    },
+    "Elasticsearch": {
+        "Elasticsearch/7.8.0": ["CVE-2020-7009", "CVE-2020-7014"],
+        "Elasticsearch/8.0.0": ["CVE-2022-23708", "CVE-2022-23709"],
     }
 }
 
 # Enhanced service signatures with ML-based fingerprinting
 SERVICE_SIGNATURES = {
-    22: {"name": "SSH", "probe": "", "pattern": r"SSH-(\d+\.\d+)", "ml_features": ["banner_length", "timing", "cipher_suites"]},
-    23: {"name": "Telnet", "probe": "", "pattern": r"login:|Username:|Password:", "ml_features": ["prompt_style", "timing"]},
-    25: {"name": "SMTP", "probe": "", "pattern": r"220.*SMTP", "ml_features": ["greeting_banner", "extensions"]},
-    53: {"name": "DNS", "probe": "", "pattern": r"", "ml_features": ["query_response", "recursion"]},
-    80: {"name": "HTTP", "probe": "GET / HTTP/1.1\r\n\r\n", "pattern": r"HTTP/", "ml_features": ["headers", "server_tokens", "response_size"]},
-    110: {"name": "POP3", "probe": "", "pattern": r"\+OK", "ml_features": ["welcome_message", "capabilities"]},
-    143: {"name": "IMAP", "probe": "", "pattern": r"\* OK", "ml_features": ["capabilities", "authentication"]},
-    443: {"name": "HTTPS", "probe": "", "pattern": r"", "ml_features": ["certificate", "cipher_suites", "tls_version"]},
-    993: {"name": "IMAPS", "probe": "", "pattern": r"\* OK", "ml_features": ["ssl_cert", "capabilities"]},
-    995: {"name": "POP3S", "probe": "", "pattern": r"\+OK", "ml_features": ["ssl_cert", "auth_methods"]},
-    3389: {"name": "RDP", "probe": "", "pattern": r"", "ml_features": ["rdp_version", "security_layers"]},
-    5432: {"name": "PostgreSQL", "probe": "", "pattern": r"", "ml_features": ["version_string", "auth_methods"]},
-    3306: {"name": "MySQL", "probe": "", "pattern": r"", "ml_features": ["version", "capabilities", "auth_plugin"]},
-    1433: {"name": "MSSQL", "probe": "", "pattern": r"", "ml_features": ["version", "instance_name"]},
-    21: {"name": "FTP", "probe": "", "pattern": r"220", "ml_features": ["banner", "features", "auth_methods"]},
-    6379: {"name": "Redis", "probe": "INFO\r\n", "pattern": r"redis_version", "ml_features": ["version", "modules", "config"]},
-    27017: {"name": "MongoDB", "probe": "", "pattern": r"", "ml_features": ["version", "build_info"]},
-    9200: {"name": "Elasticsearch", "probe": "", "pattern": r"elasticsearch", "ml_features": ["version", "cluster_info"]},
+    22: {"name": "SSH", "probe": "", "pattern": r"SSH-(\d+\.\d+)",
+         "ml_features": ["banner_length", "timing", "cipher_suites"]},
+    23: {"name": "Telnet", "probe": "", "pattern": r"login:|Username:|Password:",
+         "ml_features": ["prompt_style", "timing"]},
+    25: {"name": "SMTP", "probe": "", "pattern": r"220.*SMTP",
+         "ml_features": ["greeting_banner", "extensions"]},
+    53: {"name": "DNS", "probe": "", "pattern": r"",
+         "ml_features": ["query_response", "recursion"]},
+    80: {"name": "HTTP", "probe": "GET / HTTP/1.1\r\n\r\n", "pattern": r"HTTP/",
+         "ml_features": ["headers", "server_tokens", "response_size"]},
+    110: {"name": "POP3", "probe": "", "pattern": r"\+OK",
+          "ml_features": ["welcome_message", "capabilities"]},
+    143: {"name": "IMAP", "probe": "", "pattern": r"\* OK",
+          "ml_features": ["capabilities", "authentication"]},
+    443: {"name": "HTTPS", "probe": "", "pattern": r"",
+          "ml_features": ["certificate", "cipher_suites", "tls_version"]},
+    993: {"name": "IMAPS", "probe": "", "pattern": r"\* OK",
+          "ml_features": ["ssl_cert", "capabilities"]},
+    995: {"name": "POP3S", "probe": "", "pattern": r"\+OK",
+          "ml_features": ["ssl_cert", "auth_methods"]},
+    3389: {"name": "RDP", "probe": "", "pattern": r"",
+           "ml_features": ["rdp_version", "security_layers"]},
+    5432: {"name": "PostgreSQL", "probe": "", "pattern": r"",
+           "ml_features": ["version_string", "auth_methods"]},
+    3306: {"name": "MySQL", "probe": "", "pattern": r"",
+           "ml_features": ["version", "capabilities", "auth_plugin"]},
+    1433: {"name": "MSSQL", "probe": "", "pattern": r"",
+           "ml_features": ["version", "instance_name"]},
+    21: {"name": "FTP", "probe": "", "pattern": r"220",
+         "ml_features": ["banner", "features", "auth_methods"]},
+    6379: {"name": "Redis", "probe": "INFO\r\n", "pattern": r"redis_version",
+           "ml_features": ["version", "modules", "config"]},
+    27017: {"name": "MongoDB", "probe": "", "pattern": r"",
+            "ml_features": ["version", "build_info"]},
+    9200: {"name": "Elasticsearch", "probe": "", "pattern": r"elasticsearch",
+           "ml_features": ["version", "cluster_info"]},
 }
 
 # Cloud service detection patterns
@@ -197,11 +256,16 @@ CLOUD_SIGNATURES = {
 
 # IoT and embedded device signatures
 IOT_SIGNATURES = {
-    "camera": {"ports": [80, 443, 554, 8080], "indicators": ["camera", "webcam", "ipcam", "hikvision", "dahua"]},
-    "router": {"ports": [80, 443, 23, 22], "indicators": ["router", "gateway", "openwrt", "dd-wrt"]},
-    "printer": {"ports": [80, 443, 515, 631, 9100], "indicators": ["printer", "hp", "canon", "epson"]},
-    "nas": {"ports": [80, 443, 22, 21, 139, 445], "indicators": ["nas", "synology", "qnap", "freenas"]},
-    "iot_general": {"ports": [80, 443, 1883, 8883], "indicators": ["iot", "sensor", "smart", "device"]}
+    "camera": {"ports": [80, 443, 554, 8080],
+               "indicators": ["camera", "webcam", "ipcam", "hikvision", "dahua"]},
+    "router": {"ports": [80, 443, 23, 22, 8080],
+               "indicators": ["router", "gateway", "tp-link", "netgear", "asus"]},
+    "smart_device": {"ports": [80, 443, 8080, 9999],
+                     "indicators": ["smart", "iot", "device", "home"]},
+    "printer": {"ports": [80, 443, 631, 9100],
+                "indicators": ["printer", "canon", "hp", "epson", "brother"]},
+    "nas": {"ports": [80, 443, 5000, 5001, 8080],
+            "indicators": ["nas", "synology", "qnap", "buffalo"]},
 }
 
 # Common web application signatures
@@ -472,29 +536,22 @@ class DeepLearningDetector:
         """Calculate advanced entropy with deep learning analysis."""
         if not banner:
             return 0.0
-        
+
         # Advanced entropy calculation
         char_freq = {}
         for char in banner:
             char_freq[char] = char_freq.get(char, 0) + 1
-        
+
         entropy = 0.0
         for freq in char_freq.values():
             prob = freq / len(banner)
             if prob > 0:
                 entropy -= prob * (prob.bit_length() - 1)
-        
+
         return min(entropy / 8.0, 1.0)
 
     def _detect_timing_anomaly(self, timing: float) -> float:
         """Detect timing-based anomalies."""
-        # Typical response times
-        normal_ranges = {
-            "fast": (0.001, 0.1),
-            "normal": (0.1, 1.0),
-            "slow": (1.0, 5.0)
-        }
-        
         if timing < 0.001 or timing > 10.0:
             return 0.9  # Highly anomalous
         elif timing > 5.0:
@@ -516,14 +573,14 @@ class DeepLearningDetector:
             993: ["IMAPS"],
             995: ["POP3S"]
         }
-        
+
         if port in expected_protocols:
             expected = expected_protocols[port]
             for protocol in expected:
                 if protocol.lower() in banner.lower():
                     return 0.1  # Normal protocol
             return 0.8  # Unexpected protocol on known port
-        
+
         return 0.3  # Unknown port
 
     def _extract_behavioral_signature(self, banner: str) -> float:
@@ -535,12 +592,12 @@ class DeepLearningDetector:
             r"\x[0-9a-fA-F]{2}",  # Hex escape sequences
             r"\\u[0-9a-fA-F]{4}",  # Unicode escapes
         ]
-        
+
         suspicion_score = 0.0
         for pattern in suspicious_patterns:
             if re.search(pattern, banner):
                 suspicion_score += 0.2
-        
+
         return min(suspicion_score, 1.0)
 
 
@@ -561,7 +618,7 @@ class BlockchainDetector:
             8899: "Solana RPC",
             8900: "Solana P2P"
         }
-        
+
         self.blockchain_signatures = {
             "bitcoin": ["bitcoin", "btc", "satoshi", "blockchain"],
             "ethereum": ["ethereum", "eth", "geth", "web3", "metamask"],
@@ -604,35 +661,35 @@ class BlockchainDetector:
             r"curve|yearn|synthetix",
             r"chainlink|oracle"
         ]
-        
+
         for pattern in defi_patterns:
             if re.search(pattern, banner_lower):
-                detection_results["defi_protocols"].append(pattern.split('|')[0])
+                detection_results["defi_protocols"].append(pattern.split('|', 1)[0])
 
         return detection_results
 
     def analyze_crypto_mining(self, banner: str, port: int) -> Dict[str, Any]:
         """Analyze cryptocurrency mining operations."""
         mining_indicators = [
-            "stratum", "pool", "mining", "hashrate", 
+            "stratum", "pool", "mining", "hashrate",
             "miner", "antminer", "asic", "gpu"
         ]
-        
+
         mining_ports = [3333, 4444, 9999, 14444, 17777]
-        
+
         is_mining = False
         confidence = 0.0
-        
+
         banner_lower = banner.lower()
         for indicator in mining_indicators:
             if indicator in banner_lower:
                 is_mining = True
                 confidence += 0.2
-        
+
         if port in mining_ports:
             is_mining = True
             confidence += 0.5
-        
+
         return {
             "is_mining": is_mining,
             "confidence": min(confidence, 1.0),
@@ -679,7 +736,7 @@ class IoTSpecializedScanner:
             }
         }
 
-    def fingerprint_iot_device(self, banner: str, port: int, 
+    def fingerprint_iot_device(self, banner: str, port: int,
                               target_ip: str) -> Dict[str, Any]:
         """Advanced IoT device fingerprinting."""
         device_info = {
@@ -693,18 +750,18 @@ class IoTSpecializedScanner:
         }
 
         banner_lower = banner.lower()
-        
+
         # Check each IoT category
         for category, db in self.iot_databases.items():
             if port in db["ports"]:
                 device_info["confidence"] += 0.3
-                
+
                 for signature in db["signatures"]:
                     if signature in banner_lower:
                         device_info["device_type"] = category
                         device_info["iot_category"] = category
                         device_info["confidence"] += 0.4
-                        
+
                         # Extract manufacturer and model
                         if signature in ["hikvision", "dahua", "axis"]:
                             device_info["manufacturer"] = signature.title()
@@ -717,7 +774,7 @@ class IoTSpecializedScanner:
             r"firmware\s+([0-9]+(?:\.[0-9]+)*)",
             r"v([0-9]+(?:\.[0-9]+)*)"
         ]
-        
+
         for pattern in version_patterns:
             match = re.search(pattern, banner_lower)
             if match:
@@ -731,7 +788,7 @@ class IoTSpecializedScanner:
             ("exposed_config", ["/config", "/backup", "/dump"]),
             ("debug_interface", ["debug", "test", "dev"])
         ]
-        
+
         for issue_type, indicators in security_checks:
             for indicator in indicators:
                 if indicator in banner_lower:
@@ -744,7 +801,7 @@ class IoTSpecializedScanner:
         iot_ports = set()
         for category_data in self.iot_databases.values():
             iot_ports.update(category_data["ports"])
-        
+
         # Add common IoT protocols
         iot_ports.update([
             1883,  # MQTT
@@ -757,7 +814,7 @@ class IoTSpecializedScanner:
             20000, # DNP3
             44818  # EtherNet/IP
         ])
-        
+
         return sorted(list(iot_ports))
 
 
@@ -770,7 +827,7 @@ class APISecurityTester:
             "/rest/", "/restapi/", "/graphql/", "/graphiql/",
             "/swagger/", "/openapi/", "/docs/", "/documentation/"
         ]
-        
+
         self.api_vulnerabilities = {
             "broken_auth": [
                 "/api/admin", "/api/user", "/api/login",
@@ -832,7 +889,7 @@ class APISecurityTester:
                     api_type = "REST"
                 elif "swagger" in endpoint or "openapi" in endpoint:
                     api_type = "OpenAPI/Swagger"
-                
+
                 # Mock detection logic
                 if endpoint in ["/api/", "/api/v1/", "/graphql/"]:
                     found_endpoints.append(endpoint)
@@ -860,7 +917,7 @@ class APISecurityTester:
                 vulnerability_found = self._mock_vulnerability_test(
                     vuln_type, test_path
                 )
-                
+
                 if vulnerability_found:
                     vulnerabilities.append({
                         "type": vuln_type,
@@ -923,17 +980,17 @@ class APISecurityTester:
             "Implement proper error handling",
             "Use HTTPS for all API communications"
         ]
-        
+
         # Add specific recommendations based on vulnerabilities
         vuln_types = [v["type"] for v in vulnerabilities]
-        
+
         if "injection" in vuln_types:
             recommendations.append("Implement input validation and parameterized queries")
         if "broken_auth" in vuln_types:
             recommendations.append("Implement OAuth 2.0 or JWT tokens")
         if "excessive_data" in vuln_types:
             recommendations.append("Implement field-level security and data filtering")
-        
+
         return recommendations
 
 
@@ -1072,7 +1129,7 @@ def main_menu():
 
     return choice
 
-async def enhanced_port_scan(target_ip: str, port: int, 
+async def enhanced_port_scan(target_ip: str, port: int,
                              scan_type: str = "normal") -> Optional[ScanResult]:
     """Enhanced async port scanning with AI fingerprinting and v3.1.0 features."""
     start_time = time.time()
@@ -1114,10 +1171,10 @@ async def enhanced_port_scan(target_ip: str, port: int,
 
         # v3.1.0 NEW: Deep Learning Zero-Day Detection
         zero_day_analysis = deep_learning.analyze_traffic_patterns(banner, response_time, port)
-        
+
         # v3.1.0 NEW: Blockchain Detection
         blockchain_analysis = blockchain_detector.detect_blockchain_services(banner, port)
-        
+
         # v3.1.0 NEW: IoT Device Fingerprinting
         iot_analysis = iot_scanner.fingerprint_iot_device(banner, port, target_ip)
 
@@ -1152,7 +1209,7 @@ async def enhanced_port_scan(target_ip: str, port: int,
             service=final_service,
             version=banner[:100] if banner else "",
             vulnerabilities=[v["cve_id"] for v in vulnerabilities],
-            confidence=max(fingerprint_result["confidence"], 
+            confidence=max(fingerprint_result["confidence"],
                           zero_day_analysis["confidence"],
                           blockchain_analysis["confidence"],
                           iot_analysis["confidence"]),
@@ -1281,7 +1338,7 @@ async def intelligence_scan_mode(target_ip: str, ports: List[int]) -> Dict[str, 
     api_security_results = []
     if RICH_AVAILABLE:
         console.print("[yellow]🔗 Testing API security endpoints...[/yellow]")
-    
+
     # Test common API ports
     api_ports = [80, 443, 8080, 3000, 4000, 5000, 8000, 8443]
     for port in [p for p in open_ports if p in api_ports]:
@@ -1299,7 +1356,7 @@ async def intelligence_scan_mode(target_ip: str, ports: List[int]) -> Dict[str, 
     iot_analysis_results = []
     if RICH_AVAILABLE:
         console.print("[yellow]🔌 Analyzing IoT device signatures...[/yellow]")
-    
+
     iot_specific_ports = iot_scanner.scan_iot_specific_ports(target_ip)
     for port in [p for p in open_ports if p in iot_specific_ports]:
         for result in scan_results:
@@ -1315,7 +1372,7 @@ async def intelligence_scan_mode(target_ip: str, ports: List[int]) -> Dict[str, 
     blockchain_summary = {"detected_services": [], "total_confidence": 0.0}
     if RICH_AVAILABLE:
         console.print("[yellow]₿ Analyzing blockchain services...[/yellow]")
-    
+
     for result in scan_results:
         if hasattr(result, 'threat_intel'):
             blockchain_data = result.threat_intel.get('blockchain_analysis', {})
@@ -1500,11 +1557,11 @@ def create_interactive_report(scan_data: Dict[str, Any], filename: str):
     try:
         # Extract data for visualization
         if "scan_results" in scan_data:
-            results = scan_data["scan_results"]
+            scan_results = scan_data["scan_results"]
         else:
-            results = scan_data.get("all_results", [])
+            scan_results = scan_data.get("all_results", [])
 
-        if not results:
+        if not scan_results:
             return
 
         # Create subplots
@@ -1517,7 +1574,7 @@ def create_interactive_report(scan_data: Dict[str, Any], filename: str):
         )
 
         # Add traces using helper function
-        _add_chart_traces(fig, results)
+        _add_chart_traces(fig, scan_results)
 
         # Update layout
         fig.update_layout(
@@ -1541,7 +1598,7 @@ def create_interactive_report(scan_data: Dict[str, Any], filename: str):
         else:
             print(f"[+] Interactive report saved to {filename}")
 
-    except Exception as e:
+    except (IOError, OSError, ValueError) as e:
         if RICH_AVAILABLE:
             console.print(f"[red]❌ Error creating interactive report: {e}[/red]")
         else:
@@ -1564,11 +1621,11 @@ def create_enhanced_text_report(scan_data: Dict[str, Any], filename: str):
 
             # Results
             if "scan_results" in scan_data:
-                results = scan_data["scan_results"]
+                scan_results = scan_data["scan_results"]
             else:
-                results = scan_data.get("all_results", [])
+                scan_results = scan_data.get("all_results", [])
 
-            f.write(f"📈 Total Open Ports: {len(results)}\n\n")
+            f.write(f"📈 Total Open Ports: {len(scan_results)}\n\n")
 
             # Threat intelligence
             if scan_data.get("threat_intelligence"):
@@ -1614,7 +1671,7 @@ def create_enhanced_text_report(scan_data: Dict[str, Any], filename: str):
         else:
             print(f"[+] Enhanced text report saved to {filename}")
 
-    except Exception as e:
+    except (IOError, OSError) as e:
         if RICH_AVAILABLE:
             console.print(f"[red]❌ Error creating text report: {e}[/red]")
         else:
@@ -1773,7 +1830,7 @@ async def save_results_prompt(scan_data: Dict[str, Any]):
         else:
             print("[+] Report(s) generated successfully!")
 
-    except Exception as e:
+    except (IOError, OSError, ValueError) as e:
         if RICH_AVAILABLE:
             console.print(f"[red]❌ Error generating reports: {e}[/red]")
         else:
@@ -1824,7 +1881,7 @@ def query_shodan(ip):
         url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_API_KEY}"
         with urllib.request.urlopen(url, timeout=10) as response:
             data = json.loads(response.read().decode())
-        
+
         # Extract information from Shodan API response
         result = {
             'organization': data.get('org', 'Unknown'),
@@ -1834,7 +1891,7 @@ def query_shodan(ip):
             'vulns': data.get('vulns', []),
             'tags': data.get('tags', [])
         }
-        
+
         return result
     except (urllib.error.URLError, json.JSONDecodeError, KeyError):
         pass
@@ -1898,24 +1955,23 @@ def get_http_banner(sock):
         request = b"GET / HTTP/1.1\r\nHost: target\r\nUser-Agent: Aura-sec\r\n\r\n"
         sock.send(request)
         response = sock.recv(4096).decode('utf-8', errors='ignore')
-        
+
         if response:
             lines = response.split('\n')
             status_line = lines[0].strip() if lines else ""
-            
+
             # Extract server information
             server_info = ""
             for line in lines:
                 if line.lower().startswith('server:'):
                     server_info = line.split(':', 1)[1].strip()
                     break
-            
+
             if server_info:
                 return f"HTTP - {server_info}"
-            elif "HTTP/" in status_line:
+            if "HTTP/" in status_line:
                 return f"HTTP - {status_line}"
-            else:
-                return "HTTP"
+            return "HTTP"
         return "HTTP"
     except socket.error:
         return "HTTP"
@@ -1926,7 +1982,7 @@ def analyze_ssl_certificate(host, port):
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-        
+
         with socket.create_connection((host, port), timeout=5) as sock:
             with context.wrap_socket(sock, server_hostname=host) as ssock:
                 cert = ssock.getpeercert()
@@ -1940,7 +1996,7 @@ def analyze_ssl_certificate(host, port):
         pass
     return None
 
-def detect_web_technologies(response_data):
+def detect_web_technologies(response_data):  # pylint: disable=unused-argument
     """Detect web technologies from response data."""
     # Basic implementation that returns empty list
     # In a full implementation, this would analyze headers and content
@@ -2373,7 +2429,7 @@ async def main():
             console.print("\n[yellow]⏹️ Scan interrupted by user[/yellow]")
         else:
             print("\n[!] Scan interrupted by user")
-    except Exception as e:
+    except (KeyboardInterrupt, SystemExit, OSError, ValueError) as e:
         if RICH_AVAILABLE:
             console.print(f"\n[red]❌ An error occurred: {e}[/red]")
         else:
@@ -2384,7 +2440,7 @@ if __name__ == "__main__":
     try:
         # Try to run async main
         asyncio.run(main())
-    except Exception as e:
+    except (OSError, ValueError, ImportError) as e:
         print(f"[!] Error running async mode: {e}")
         print("[*] Falling back to legacy mode...")
 
