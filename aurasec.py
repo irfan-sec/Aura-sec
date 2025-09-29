@@ -15,6 +15,7 @@ Features:
 - IoT and embedded device specialized detection
 """
 import sys
+import signal
 import socket
 import threading
 from queue import Queue
@@ -96,6 +97,9 @@ ASYNC_MODE = False
 THREAT_INTEL_ENABLED = False
 AI_FINGERPRINTING = True
 console = Console() if RICH_AVAILABLE else None
+
+# Signal handling for graceful shutdown
+SHUTDOWN_REQUESTED = False
 
 # Version and branding
 VERSION = "3.1.1"
@@ -1000,6 +1004,28 @@ ai_fingerprinting = AIFingerprinting()
 cloud_detector = CloudDetector()
 evasion = AdvancedEvasion()
 
+
+def signal_handler(signum, frame):
+    """Handle Ctrl+C and other signals gracefully."""
+    global SHUTDOWN_REQUESTED  # pylint: disable=global-statement
+    SHUTDOWN_REQUESTED = True
+    
+    if RICH_AVAILABLE and console:
+        console.print("\n[bold red]🛑 Shutdown requested...[/bold red]")
+        console.print("[yellow]⏳ Cleaning up and saving results...[/yellow]")
+    else:
+        print("\n[!] Shutdown requested. Cleaning up...")
+    
+    # Don't exit immediately, let the main loop handle cleanup
+    # This prevents the error you were seeing
+
+
+def setup_signal_handlers():
+    """Setup signal handlers for graceful shutdown."""
+    signal.signal(signal.SIGINT, signal_handler)
+    if hasattr(signal, 'SIGTERM'):
+        signal.signal(signal.SIGTERM, signal_handler)
+
 # Initialize v3.1.0 components
 deep_learning = DeepLearningDetector()
 blockchain_detector = BlockchainDetector()
@@ -1086,6 +1112,7 @@ def display_banner():
 
 def main_menu():
     """Enhanced main menu with new scanning modes."""
+    global SHUTDOWN_REQUESTED  # pylint: disable=global-statement
     if RICH_AVAILABLE:
         menu_table = Table(title="🎯 Select Scanning Mode",
                            show_header=True, header_style="bold cyan")
@@ -1114,8 +1141,13 @@ def main_menu():
             menu_table.add_row(option, scan_type, description)
 
         console.print(menu_table)
-        choice = console.input(
-            "\n[bold yellow]🎯 Enter your choice (1-7): [/bold yellow]")
+        try:
+            choice = console.input(
+                "\n[bold yellow]🎯 Enter your choice (1-7): [/bold yellow]")
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]⏹️ Menu selection interrupted by user[/yellow]")
+            SHUTDOWN_REQUESTED = True
+            return None
     else:
         print("\nPlease select the scanning mode:")
         print("1. 🚀 Turbo Scan - AI-powered async scanning")
@@ -1125,7 +1157,12 @@ def main_menu():
         print("5. 🔍 Deep Probe - Vulnerability assessment")
         print("6. 👻 Anonymous Scan - Tor-based scanning")
         print("7. ⚡ Legacy Mode - Classic scanning")
-        choice = input("Enter your choice (1-7): ")
+        try:
+            choice = input("Enter your choice (1-7): ")
+        except (KeyboardInterrupt, EOFError):
+            print("\n[*] Menu selection interrupted by user")
+            SHUTDOWN_REQUESTED = True
+            return None
 
     return choice
 
@@ -1135,10 +1172,18 @@ async def enhanced_port_scan(target_ip: str, port: int,
     start_time = time.time()
 
     try:
+        # Check for shutdown request
+        if SHUTDOWN_REQUESTED:
+            return None
+            
         # Apply evasion delay if in stealth mode
         if scan_type == "stealth":
             delay = evasion.calculate_adaptive_delay(0.1, 0.8)
             await asyncio.sleep(delay)
+
+        # Check again after delay
+        if SHUTDOWN_REQUESTED:
+            return None
 
         # Attempt connection
         future = asyncio.open_connection(target_ip, port)
@@ -1249,26 +1294,37 @@ async def turbo_scan_mode(target_ip: str, ports: List[int]) -> List[ScanResult]:
             scan_results = []
             batch_size = 50
             for i in range(0, len(ports), batch_size):
+                # Check for shutdown request
+                if SHUTDOWN_REQUESTED:
+                    break
+                    
                 batch = ports[i:i + batch_size]
-                batch_results = await asyncio.gather(
-                    *[scan_with_semaphore(port) for port in batch],
-                    return_exceptions=True
-                )
+                try:
+                    batch_results = await asyncio.gather(
+                        *[scan_with_semaphore(port) for port in batch],
+                        return_exceptions=True
+                    )
 
-                for result in batch_results:
-                    if isinstance(result, ScanResult):
-                        scan_results.append(result)
+                    for result in batch_results:
+                        if isinstance(result, ScanResult):
+                            scan_results.append(result)
 
-                progress.update(task, advance=len(batch))
+                    progress.update(task, advance=len(batch))
+                except asyncio.CancelledError:
+                    break
     else:
         # Fallback without rich
         scan_results = []
-        tasks = [scan_with_semaphore(port) for port in ports]
-        completed_results = await asyncio.gather(*tasks, return_exceptions=True)
+        if not SHUTDOWN_REQUESTED:
+            tasks = [scan_with_semaphore(port) for port in ports]
+            try:
+                completed_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        for result in completed_results:
-            if isinstance(result, ScanResult):
-                scan_results.append(result)
+                for result in completed_results:
+                    if isinstance(result, ScanResult):
+                        scan_results.append(result)
+            except asyncio.CancelledError:
+                pass
 
     return scan_results
 
@@ -1460,7 +1516,7 @@ def configure_shodan():
 
 def configure_advanced_options(scan_mode: str):
     """Configure advanced scanning options."""
-    global THREAT_INTEL_ENABLED, AI_FINGERPRINTING, ASYNC_MODE  # pylint: disable=global-statement
+    global THREAT_INTEL_ENABLED, AI_FINGERPRINTING, ASYNC_MODE, SHUTDOWN_REQUESTED  # pylint: disable=global-statement
 
     if RICH_AVAILABLE:
         console.print(f"\n[bold cyan]⚙️ Configuring {scan_mode} Options[/bold cyan]")
@@ -1470,14 +1526,26 @@ def configure_advanced_options(scan_mode: str):
         options_table.add_column("Status", style="green")
 
         # AI Fingerprinting
-        ai_choice = console.input("[yellow]🤖 Enable AI-powered fingerprinting? (Y/n): [/yellow]").lower()
-        AI_FINGERPRINTING = ai_choice != 'n'
+        try:
+            ai_choice = console.input("[yellow]🤖 Enable AI-powered fingerprinting? (Y/n): [/yellow]").lower()
+            AI_FINGERPRINTING = ai_choice != 'n'
+        except (KeyboardInterrupt, EOFError):
+            if RICH_AVAILABLE:
+                console.print("\n[yellow]⏹️ Configuration interrupted by user[/yellow]")
+            SHUTDOWN_REQUESTED = True
+            return None
         options_table.add_row("AI Fingerprinting", "✅ Enabled" if AI_FINGERPRINTING else "❌ Disabled")
 
         # Threat Intelligence
         if REQUESTS_AVAILABLE:
-            threat_choice = console.input("[yellow]🛡️ Enable threat intelligence feeds? (Y/n): [/yellow]").lower()
-            THREAT_INTEL_ENABLED = threat_choice != 'n'
+            try:
+                threat_choice = console.input("[yellow]🛡️ Enable threat intelligence feeds? (Y/n): [/yellow]").lower()
+                THREAT_INTEL_ENABLED = threat_choice != 'n'
+            except (KeyboardInterrupt, EOFError):
+                if RICH_AVAILABLE:
+                    console.print("\n[yellow]⏹️ Configuration interrupted by user[/yellow]")
+                SHUTDOWN_REQUESTED = True
+                return None
             options_table.add_row("Threat Intelligence", "✅ Enabled" if THREAT_INTEL_ENABLED else "❌ Disabled")
 
         # Async Mode
@@ -1488,8 +1556,15 @@ def configure_advanced_options(scan_mode: str):
         console.print(options_table)
     else:
         # Fallback for non-rich environments
-        ai_choice = input("Enable AI-powered fingerprinting? (Y/n): ").lower()
-        AI_FINGERPRINTING = ai_choice != 'n'
+        try:
+            ai_choice = input("Enable AI-powered fingerprinting? (Y/n): ").lower()
+            AI_FINGERPRINTING = ai_choice != 'n'
+        except (KeyboardInterrupt, EOFError):
+            print("\n[*] Configuration interrupted by user")
+            SHUTDOWN_REQUESTED = True
+            return None
+    
+    return True
 
 
 def _create_scan_metadata_html(scan_data):
@@ -2257,13 +2332,19 @@ def display_results_and_save():
 # --- Enhanced Main Program ---
 async def main():
     """Main program with enhanced async capabilities."""
-    global TARGET_IP, SCAN_START_TIME  # pylint: disable=global-statement
+    global TARGET_IP, SCAN_START_TIME, SHUTDOWN_REQUESTED  # pylint: disable=global-statement
+
+    # Setup signal handlers for graceful shutdown
+    setup_signal_handlers()
 
     # Display enhanced banner
     display_banner()
 
     try:
         scan_choice = main_menu()
+        if scan_choice is None:
+            # Menu was interrupted, exit gracefully
+            return
 
         scan_modes = {
             "1": "turbo",
@@ -2279,13 +2360,24 @@ async def main():
 
         # Configure advanced options
         if scan_mode != "legacy":
-            configure_advanced_options(scan_mode)
+            config_result = configure_advanced_options(scan_mode)
+            if config_result is None:
+                # Configuration was interrupted, exit gracefully
+                return
 
         # Get target
-        if RICH_AVAILABLE:
-            target_input = console.input("\n[bold cyan]🎯 Enter target IP address or hostname: [/bold cyan]")
-        else:
-            target_input = input("\nEnter target IP address or hostname: ")
+        try:
+            if RICH_AVAILABLE:
+                target_input = console.input("\n[bold cyan]🎯 Enter target IP address or hostname: [/bold cyan]")
+            else:
+                target_input = input("\nEnter target IP address or hostname: ")
+        except (KeyboardInterrupt, EOFError):
+            if RICH_AVAILABLE:
+                console.print("\n[yellow]⏹️ Target selection interrupted by user[/yellow]")
+            else:
+                print("\n[*] Target selection interrupted by user")
+            SHUTDOWN_REQUESTED = True
+            return
 
         # Resolve target
         try:
@@ -2328,13 +2420,17 @@ async def main():
         if scan_mode == "turbo":
             if RICH_AVAILABLE:
                 console.print("\n[bold green]🚀 Launching Turbo Scan...[/bold green]")
-            scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
-            scan_data = {
-                "scan_results": scan_results,
-                "target_ip": TARGET_IP,
-                "timestamp": datetime.datetime.now().isoformat(),
-                "scan_mode": "turbo"
-            }
+            
+            if not SHUTDOWN_REQUESTED:
+                scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
+                scan_data = {
+                    "scan_results": scan_results,
+                    "target_ip": TARGET_IP,
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "scan_mode": "turbo"
+                }
+            else:
+                return  # Exit gracefully if shutdown requested
 
         elif scan_mode == "ghost":
             if RICH_AVAILABLE:
@@ -2406,8 +2502,8 @@ async def main():
                 "scan_mode": "legacy"
             }
 
-        # Display results
-        if scan_data:
+        # Display results if scan completed and shutdown wasn't requested
+        if scan_data and not SHUTDOWN_REQUESTED:
             scan_duration = time.time() - SCAN_START_TIME
             if RICH_AVAILABLE:
                 console.print(f"\n[bold green]✅ Scan completed in {scan_duration:.2f} seconds[/bold green]")
@@ -2416,6 +2512,13 @@ async def main():
 
             display_enhanced_results(scan_data)
             await save_results_prompt(scan_data)
+        elif SHUTDOWN_REQUESTED and scan_data:
+            # Show partial results if scan was interrupted but has some data
+            if RICH_AVAILABLE:
+                console.print("\n[yellow]📊 Partial results from interrupted scan:[/yellow]")
+            else:
+                print("\n[*] Partial results from interrupted scan:")
+            display_enhanced_results(scan_data)
 
         if RICH_AVAILABLE:
             console.print("\n[bold green]🎯 Thank you for using Aura-sec v3.0.0![/bold green]")
@@ -2425,28 +2528,46 @@ async def main():
             print("Stay secure and happy hacking!")
 
     except KeyboardInterrupt:
+        SHUTDOWN_REQUESTED = True
         if RICH_AVAILABLE:
-            console.print("\n[yellow]⏹️ Scan interrupted by user[/yellow]")
+            console.print("\n[yellow]⏹️ Scan interrupted by user (Ctrl+C)[/yellow]")
+            console.print("[green]✅ Shutting down gracefully...[/green]")
         else:
-            print("\n[!] Scan interrupted by user")
-    except (KeyboardInterrupt, SystemExit, OSError, ValueError) as e:
+            print("\n[!] Scan interrupted by user (Ctrl+C)")
+            print("[*] Shutting down gracefully...")
+    except (SystemExit, OSError, ValueError) as exc:
         if RICH_AVAILABLE:
-            console.print(f"\n[red]❌ An error occurred: {e}[/red]")
+            console.print(f"\n[red]❌ An error occurred: {exc}[/red]")
         else:
-            print(f"\n[!] An error occurred: {e}")
+            print(f"\n[!] An error occurred: {exc}")
+    except Exception as exc:
+        if RICH_AVAILABLE:
+            console.print(f"\n[red]💥 Unexpected error: {exc}[/red]")
+        else:
+            print(f"\n[!] Unexpected error: {exc}")
 
 # Entry point
 if __name__ == "__main__":
     try:
+        # Setup signal handlers first
+        setup_signal_handlers()
+        
         # Try to run async main
         asyncio.run(main())
-    except (OSError, ValueError, ImportError) as e:
-        print(f"[!] Error running async mode: {e}")
+    except KeyboardInterrupt:
+        print("\n[*] Interrupted by user (Ctrl+C). Exiting gracefully...")
+        sys.exit(0)
+    except (OSError, ValueError, ImportError) as exc:
+        print(f"[!] Error running async mode: {exc}")
         print("[*] Falling back to legacy mode...")
 
         # Fallback to legacy synchronous mode
-        display_banner()
-        user_scan_choice = main_menu()
+        try:
+            display_banner()
+            user_scan_choice = main_menu()
+        except KeyboardInterrupt:
+            print("\n[*] Interrupted by user (Ctrl+C). Exiting gracefully...")
+            sys.exit(0)
 
         if user_scan_choice in ['1', '2', '3', '4', '5', '6']:
             TARGET_IP = get_target()
