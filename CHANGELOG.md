@@ -5,7 +5,7 @@ All notable changes to Aura-sec will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.1] - 2024-12-28 🛠️
+## [3.1.1] - 2025-09-28 🛠️
 
 ### 🐛 Bug Fixes & Code Quality Improvements
 
@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.1.0] - 2024-12-19 🚀
+## [3.1.0] - 2025-09-22 🚀
 
 ### 🎉 Major Feature Release - Next-Generation Capabilities
 
@@ -144,7 +144,7 @@ This release delivers all planned v3.1.0 features, introducing cutting-edge capa
 
 ---
 
-## [3.0.0] - 2024-09-15 🚀
+## [3.0.0] - 2025-09-15 🚀
 
 ### 🎉 Major Release - World's Best Security Scanner
 
@@ -295,7 +295,7 @@ This is a revolutionary release that transforms Aura-sec from a traditional port
 
 ---
 
-## [2.5.1] - 2024-08-15
+## [2.5.1] - 2025-08-17
 
 ### 🔧 Fixed
 - Minor bug fixes in banner grabbing
@@ -308,7 +308,7 @@ This is a revolutionary release that transforms Aura-sec from a traditional port
 
 ---
 
-## [2.5.0] - 2024-07-01
+## [2.5.0] - 2025-08-15
 
 ### ✨ Added
 - Enhanced service detection with protocol-specific probes
@@ -333,7 +333,7 @@ This is a revolutionary release that transforms Aura-sec from a traditional port
 
 ---
 
-## [2.0.0] - 2024-05-15
+## [2.0.0] - 2025-08-01
 
 ### ✨ Added
 - Multi-threaded scanning for improved performance
@@ -349,7 +349,7 @@ This is a revolutionary release that transforms Aura-sec from a traditional port
 
 ---
 
-## [1.0.0] - 2024-03-01
+## [1.0.0] - 2025-07-01
 
 ### ✨ Added
 - Initial release of Aura-sec
