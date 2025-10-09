@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 """
 Aura-sec v3.1.1 - The World's Most Advanced Open-Source Security Scanner
 A revolutionary cybersecurity reconnaissance tool with AI-powered features.
@@ -107,6 +108,7 @@ BANNER_TEXT = "Aura-sec v3.1.1 - World's Most Advanced Security Scanner"
 
 # Advanced scanning modes
 @dataclass
+# pylint: disable=too-many-instance-attributes
 class ScanResult:
     """Enhanced scan result with comprehensive metadata."""
     port: int
@@ -508,6 +510,7 @@ class AdvancedEvasion:
         return obfuscated
 
 
+# pylint: disable=too-few-public-methods
 class DeepLearningDetector:
     """Advanced AI for zero-day service detection using deep learning models."""
 
@@ -558,10 +561,9 @@ class DeepLearningDetector:
         """Detect timing-based anomalies."""
         if timing < 0.001 or timing > 10.0:
             return 0.9  # Highly anomalous
-        elif timing > 5.0:
+        if timing > 5.0:
             return 0.6  # Moderately anomalous
-        else:
-            return 0.1  # Normal
+        return 0.1  # Normal
 
     def _analyze_protocol_deviation(self, banner: str, port: int) -> float:
         """Analyze protocol deviations that might indicate zero-day services."""
@@ -822,6 +824,7 @@ class IoTSpecializedScanner:
         return sorted(list(iot_ports))
 
 
+# pylint: disable=too-few-public-methods
 class APISecurityTester:
     """REST/GraphQL API vulnerability assessment."""
 
@@ -1166,6 +1169,7 @@ def main_menu():
 
     return choice
 
+# pylint: disable=too-many-locals
 async def enhanced_port_scan(target_ip: str, port: int,
                              scan_type: str = "normal") -> Optional[ScanResult]:
     """Enhanced async port scanning with AI fingerprinting and v3.1.0 features."""
@@ -1246,7 +1250,7 @@ async def enhanced_port_scan(target_ip: str, port: int,
         elif iot_analysis["device_type"] != "unknown":
             final_service = f"IoT {iot_analysis['device_type'].title()}"
         elif zero_day_analysis["is_potential_zero_day"]:
-            final_service = f"Potential Zero-Day Service"
+            final_service = "Potential Zero-Day Service"
 
         return ScanResult(
             port=port,
@@ -1367,6 +1371,7 @@ async def ghost_scan_mode(target_ip: str, ports: List[int]) -> List[ScanResult]:
 
     return scan_results
 
+# pylint: disable=too-many-locals,too-many-branches
 async def intelligence_scan_mode(target_ip: str, ports: List[int]) -> Dict[str, Any]:
     """Comprehensive intelligence gathering scan with v3.1.0 enhancements."""
     if RICH_AVAILABLE:
@@ -1600,10 +1605,10 @@ def _create_scan_metadata_html(scan_data):
     """
 
 
-def _add_chart_traces(fig, results):
+def _add_chart_traces(fig, scan_results):
     """Add chart traces to the plotly figure."""
     # Port distribution
-    ports = [r.port for r in results]
+    ports = [r.port for r in scan_results]
     port_counts = {}
     for port in ports:
         port_counts[port] = port_counts.get(port, 0) + 1
@@ -1614,7 +1619,7 @@ def _add_chart_traces(fig, results):
     )
 
     # Service types pie chart
-    services = [r.service for r in results]
+    services = [r.service for r in scan_results]
     service_counts = {}
     for service in services:
         service_counts[service] = service_counts.get(service, 0) + 1
@@ -1626,7 +1631,7 @@ def _add_chart_traces(fig, results):
     )
 
     # Confidence scores histogram
-    confidences = [r.confidence for r in results if hasattr(r, 'confidence')]
+    confidences = [r.confidence for r in scan_results if hasattr(r, 'confidence')]
     if confidences:
         fig.add_trace(
             go.Histogram(x=confidences, name="Confidence"),
@@ -1635,7 +1640,7 @@ def _add_chart_traces(fig, results):
 
     # Response times scatter
     response_times = [
-        r.response_time for r in results if hasattr(r, 'response_time')
+        r.response_time for r in scan_results if hasattr(r, 'response_time')
     ]
     if response_times:
         fig.add_trace(
@@ -1663,7 +1668,7 @@ def create_interactive_report(scan_data: Dict[str, Any], filename: str):
             scan_results = scan_data.get("all_results", [])
 
         if not scan_results:
-            return
+            return None
 
         # Create subplots
         fig = make_subplots(
@@ -1701,13 +1706,16 @@ def create_interactive_report(scan_data: Dict[str, Any], filename: str):
             console.print(f"[green]✅ Interactive report saved to {filename}[/green]")
         else:
             print(f"[+] Interactive report saved to {filename}")
+        return None
 
     except (IOError, OSError, ValueError) as e:
         if RICH_AVAILABLE:
             console.print(f"[red]❌ Error creating interactive report: {e}[/red]")
         else:
             print(f"[!] Error creating interactive report: {e}")
+        return None
 
+# pylint: disable=too-many-branches,too-many-statements
 def create_enhanced_text_report(scan_data: Dict[str, Any], filename: str):
     """Create enhanced text report with rich formatting."""
     try:
@@ -1787,11 +1795,11 @@ def create_enhanced_text_report(scan_data: Dict[str, Any], filename: str):
 def display_enhanced_results(scan_data: Dict[str, Any]):
     """Display enhanced scan results with rich formatting."""
     if "scan_results" in scan_data:
-        results = scan_data["scan_results"]
+        scan_results = scan_data["scan_results"]
     else:
-        results = scan_data.get("all_results", [])
+        scan_results = scan_data.get("all_results", [])
 
-    if not results:
+    if not scan_results:
         if RICH_AVAILABLE:
             console.print("[yellow]🔍 No open ports found[/yellow]")
         else:
@@ -1811,7 +1819,7 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
         results_table.add_column("Confidence", style="blue", width=10)
         results_table.add_column("Vulnerabilities", style="red", width=20)
 
-        for result in sorted(results, key=lambda x: x.port):
+        for result in sorted(scan_results, key=lambda x: x.port):
             vuln_text = (
                 ", ".join(result.vulnerabilities[:2]) 
                 if result.vulnerabilities else "None"
@@ -1822,7 +1830,7 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
 
             confidence_text = f"{result.confidence:.2f}" if hasattr(result, 'confidence') else "N/A"
             version_text = (
-                result.version[:25] + "..." 
+                result.version[:25] + "..."
                 if len(result.version) > 25 else result.version
             )
 
@@ -1870,11 +1878,12 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
 
     else:
         # Fallback for non-rich environments
-        print(f"\n[*] Found {len(results)} open ports:")
-        for result in sorted(results, key=lambda x: x.port):
+        print(f"\n[*] Found {len(scan_results)} open ports:")
+        for result in sorted(scan_results, key=lambda x: x.port):
             vuln_info = f" [VULNS: {len(result.vulnerabilities)}]" if result.vulnerabilities else ""
             print(f"[+] Port {result.port}: {result.service} - {result.version}{vuln_info}")
 
+# pylint: disable=too-many-branches,too-many-statements
 async def save_results_prompt(scan_data: Dict[str, Any]):
     """Prompt user to save results in various formats."""
     if RICH_AVAILABLE:
@@ -1913,7 +1922,7 @@ async def save_results_prompt(scan_data: Dict[str, Any]):
             f"aura_scan_{scan_data.get('target_ip', 'unknown')}_{int(time.time())}"
         )
         filename = (
-            console.input("[cyan]Enter base filename (without extension): [/cyan]") 
+            console.input("[cyan]Enter base filename (without extension): [/cyan]")
             or default_filename
         )
     else:
@@ -1953,11 +1962,11 @@ async def save_results_prompt(scan_data: Dict[str, Any]):
                     ]
                 json.dump(json_data, f, indent=2, default=str)
         elif format_choice == "4":
-            results = scan_data.get("scan_results", scan_data.get("all_results", []))
+            csv_results = scan_data.get("scan_results", scan_data.get("all_results", []))
             with open(f"{base_filename}.csv", 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(['Port', 'Service', 'Version', 'Vulnerabilities', 'Confidence'])
-                for r in results:
+                for r in csv_results:
                     writer.writerow([
                         r.port, r.service, r.version,
                         '; '.join(r.vulnerabilities),
@@ -2624,7 +2633,7 @@ async def main():
             console.print(f"\n[red]❌ An error occurred: {exc}[/red]")
         else:
             print(f"\n[!] An error occurred: {exc}")
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         if RICH_AVAILABLE:
             console.print(f"\n[red]💥 Unexpected error: {exc}[/red]")
         else:
