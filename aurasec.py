@@ -1107,9 +1107,9 @@ def display_banner():
   |  | |  |('  '-'(_.-' |  |\  \   |  | |  |         \       / |  `---.(_'  '--'\
   `--' `--'  `-----'    `--' '--'  `--' `--'          `-----'  `------'   `-----'
         """)
-        print(f"           Welcome to Aura-sec v{VERSION}")
-        print("           The World's Most Advanced Security Scanner")
-        print("           Created by I R F A N")
+        print(f"        Welcome to Aura-sec v{VERSION}")
+        print("       The World's Most Advanced Security Scanner")
+        print("         Created by I R F A N")
         print("     GitHub: https://github.com/irfan-sec")
         print("-" * 60)
 
