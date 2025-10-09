@@ -426,7 +426,7 @@ class CloudDetector:
     def __init__(self):
         self.detected_services = []
 
-    async def detect_cloud_provider(self, target_ip: str) -> Dict[str, Any]:
+    async def detect_cloud_provider(self, _target_ip: str) -> Dict[str, Any]:
         """Detect if target is running on cloud infrastructure."""
         cloud_info = {
             "provider": "unknown",
@@ -741,7 +741,7 @@ class IoTSpecializedScanner:
         }
 
     def fingerprint_iot_device(self, banner: str, port: int,
-                              target_ip: str) -> Dict[str, Any]:
+                              _target_ip: str) -> Dict[str, Any]:
         """Advanced IoT device fingerprinting."""
         device_info = {
             "device_type": "unknown",
@@ -800,7 +800,7 @@ class IoTSpecializedScanner:
 
         return device_info
 
-    def scan_iot_specific_ports(self, target_ip: str) -> List[int]:
+    def scan_iot_specific_ports(self, _target_ip: str) -> List[int]:
         """Return IoT-specific ports for targeted scanning."""
         iot_ports = set()
         for category_data in self.iot_databases.values():
@@ -879,7 +879,7 @@ class APISecurityTester:
 
         return security_results
 
-    async def _detect_api_presence(self, target_ip: str, port: int) -> Dict[str, Any]:
+    async def _detect_api_presence(self, _target_ip: str, _port: int) -> Dict[str, Any]:
         """Detect API presence and type."""
         found_endpoints = []
         api_type = "unknown"
@@ -907,8 +907,8 @@ class APISecurityTester:
             "endpoints": found_endpoints
         }
 
-    async def _test_api_vulnerabilities(self, target_ip: str, port: int,
-                                      endpoints: List[str]) -> Dict[str, Any]:
+    async def _test_api_vulnerabilities(self, _target_ip: str, _port: int,
+                                      _endpoints: List[str]) -> Dict[str, Any]:
         """Test for common API vulnerabilities."""
         vulnerabilities = []
         score = 100.0  # Start with perfect score
@@ -940,7 +940,7 @@ class APISecurityTester:
             "recommendations": recommendations
         }
 
-    def _mock_vulnerability_test(self, vuln_type: str, test_path: str) -> bool:
+    def _mock_vulnerability_test(self, _vuln_type: str, _test_path: str) -> bool:
         """Mock vulnerability testing (replace with real implementation)."""
         # Simulate some vulnerabilities being found
         return random.random() < 0.3  # 30% chance of finding vulnerability
@@ -1005,7 +1005,7 @@ cloud_detector = CloudDetector()
 evasion = AdvancedEvasion()
 
 
-def signal_handler(signum, frame):
+def signal_handler(_signum, _frame):
     """Handle Ctrl+C and other signals gracefully."""
     global SHUTDOWN_REQUESTED  # pylint: disable=global-statement
     SHUTDOWN_REQUESTED = True
@@ -1801,8 +1801,8 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
     if RICH_AVAILABLE:
         # Create results table
         results_table = Table(
-            title=f"🎯 Scan Results for {scan_data.get('target_ip', 'Unknown')}", 
-            show_header=True, 
+            title=f"🎯 Scan Results for {scan_data.get('target_ip', 'Unknown')}",
+            show_header=True,
             header_style="bold magenta"
         )
         results_table.add_column("Port", style="cyan", width=8)
