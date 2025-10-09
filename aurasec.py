@@ -1009,13 +1009,13 @@ def signal_handler(signum, frame):
     """Handle Ctrl+C and other signals gracefully."""
     global SHUTDOWN_REQUESTED  # pylint: disable=global-statement
     SHUTDOWN_REQUESTED = True
-    
+
     if RICH_AVAILABLE and console:
         console.print("\n[bold red]🛑 Shutdown requested...[/bold red]")
         console.print("[yellow]⏳ Cleaning up and saving results...[/yellow]")
     else:
         print("\n[!] Shutdown requested. Cleaning up...")
-    
+
     # Don't exit immediately, let the main loop handle cleanup
     # This prevents the error you were seeing
 
@@ -1175,7 +1175,7 @@ async def enhanced_port_scan(target_ip: str, port: int,
         # Check for shutdown request
         if SHUTDOWN_REQUESTED:
             return None
-            
+
         # Apply evasion delay if in stealth mode
         if scan_type == "stealth":
             delay = evasion.calculate_adaptive_delay(0.1, 0.8)
@@ -1297,7 +1297,7 @@ async def turbo_scan_mode(target_ip: str, ports: List[int]) -> List[ScanResult]:
                 # Check for shutdown request
                 if SHUTDOWN_REQUESTED:
                     break
-                    
+
                 batch = ports[i:i + batch_size]
                 try:
                     batch_results = await asyncio.gather(
@@ -1489,15 +1489,23 @@ def configure_shodan():
     global SHODAN_API_KEY, USE_SHODAN  # pylint: disable=global-statement
 
     if RICH_AVAILABLE:
-        use_shodan = console.input("\n[yellow]🔍 Enable Shodan integration for enhanced intelligence? (y/n): [/yellow]").lower()
+        use_shodan = console.input(
+            "\n[yellow]🔍 Enable Shodan integration for enhanced intelligence? (y/n): [/yellow]"
+        ).lower()
     else:
-        use_shodan = input("\nEnable Shodan integration for additional intelligence? (y/n): ").lower()
+        use_shodan = input(
+            "\nEnable Shodan integration for additional intelligence? (y/n): "
+        ).lower()
 
     if use_shodan == 'y':
         if RICH_AVAILABLE:
-            api_key = console.input("[cyan]Enter your Shodan API key (or press Enter to skip): [/cyan]").strip()
+            api_key = console.input(
+                "[cyan]Enter your Shodan API key (or press Enter to skip): [/cyan]"
+            ).strip()
         else:
-            api_key = input("Enter your Shodan API key (or press Enter to skip): ").strip()
+            api_key = input(
+                "Enter your Shodan API key (or press Enter to skip): "
+            ).strip()
 
         if api_key:
             SHODAN_API_KEY = api_key
@@ -1527,26 +1535,38 @@ def configure_advanced_options(scan_mode: str):
 
         # AI Fingerprinting
         try:
-            ai_choice = console.input("[yellow]🤖 Enable AI-powered fingerprinting? (Y/n): [/yellow]").lower()
+            ai_choice = console.input(
+                "[yellow]🤖 Enable AI-powered fingerprinting? (Y/n): [/yellow]"
+            ).lower()
             AI_FINGERPRINTING = ai_choice != 'n'
         except (KeyboardInterrupt, EOFError):
             if RICH_AVAILABLE:
                 console.print("\n[yellow]⏹️ Configuration interrupted by user[/yellow]")
             SHUTDOWN_REQUESTED = True
             return None
-        options_table.add_row("AI Fingerprinting", "✅ Enabled" if AI_FINGERPRINTING else "❌ Disabled")
+        options_table.add_row(
+            "AI Fingerprinting", 
+            "✅ Enabled" if AI_FINGERPRINTING else "❌ Disabled"
+        )
 
         # Threat Intelligence
         if REQUESTS_AVAILABLE:
             try:
-                threat_choice = console.input("[yellow]🛡️ Enable threat intelligence feeds? (Y/n): [/yellow]").lower()
+                threat_choice = console.input(
+                    "[yellow]🛡️ Enable threat intelligence feeds? (Y/n): [/yellow]"
+                ).lower()
                 THREAT_INTEL_ENABLED = threat_choice != 'n'
             except (KeyboardInterrupt, EOFError):
                 if RICH_AVAILABLE:
-                    console.print("\n[yellow]⏹️ Configuration interrupted by user[/yellow]")
+                    console.print(
+                        "\n[yellow]⏹️ Configuration interrupted by user[/yellow]"
+                    )
                 SHUTDOWN_REQUESTED = True
                 return None
-            options_table.add_row("Threat Intelligence", "✅ Enabled" if THREAT_INTEL_ENABLED else "❌ Disabled")
+            options_table.add_row(
+                "Threat Intelligence", 
+                "✅ Enabled" if THREAT_INTEL_ENABLED else "❌ Disabled"
+            )
 
         # Async Mode
         if scan_mode in ["turbo", "intelligence"]:
@@ -1563,7 +1583,7 @@ def configure_advanced_options(scan_mode: str):
             print("\n[*] Configuration interrupted by user")
             SHUTDOWN_REQUESTED = True
             return None
-    
+
     return True
 
 
@@ -1614,10 +1634,14 @@ def _add_chart_traces(fig, results):
         )
 
     # Response times scatter
-    response_times = [r.response_time for r in results if hasattr(r, 'response_time')]
+    response_times = [
+        r.response_time for r in results if hasattr(r, 'response_time')
+    ]
     if response_times:
         fig.add_trace(
-            go.Scatter(x=ports, y=response_times, mode='markers', name="Response Time"),
+            go.Scatter(
+                x=ports, y=response_times, mode='markers', name="Response Time"
+            ),
             row=2, col=2
         )
 
@@ -1626,7 +1650,9 @@ def create_interactive_report(scan_data: Dict[str, Any], filename: str):
     """Create interactive HTML report with charts and graphs."""
     if not PLOTLY_AVAILABLE:
         if RICH_AVAILABLE:
-            console.print("[yellow]⚠️ Plotly not available. Generating text report instead.[/yellow]")
+            console.print(
+                "[yellow]⚠️ Plotly not available. Generating text report instead.[/yellow]"
+            )
         return create_enhanced_text_report(scan_data, filename + ".txt")
 
     try:
@@ -1653,7 +1679,10 @@ def create_interactive_report(scan_data: Dict[str, Any], filename: str):
 
         # Update layout
         fig.update_layout(
-            title=f"Aura-sec v{VERSION} - Scan Report for {scan_data.get('target_ip', 'Unknown')}",
+            title=(
+                f"Aura-sec v{VERSION} - Scan Report for "
+                f"{scan_data.get('target_ip', 'Unknown')}"
+            ),
             showlegend=False,
             height=800
         )
@@ -1717,7 +1746,10 @@ def create_enhanced_text_report(scan_data: Dict[str, Any], filename: str):
                 f.write("☁️ CLOUD INFRASTRUCTURE\n")
                 f.write("-" * 40 + "\n")
                 f.write(f"🏢 Provider: {cloud_data.get('provider', 'Unknown')}\n")
-                f.write(f"🔐 Metadata Accessible: {'Yes' if cloud_data.get('metadata_accessible', False) else 'No'}\n")
+                metadata_accessible = (
+                    'Yes' if cloud_data.get('metadata_accessible', False) else 'No'
+                )
+                f.write(f"🔐 Metadata Accessible: {metadata_accessible}\n")
                 f.write(f"📊 Confidence: {cloud_data.get('confidence', 0):.2f}\n\n")
 
             # Detailed port results
@@ -1768,7 +1800,11 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
 
     if RICH_AVAILABLE:
         # Create results table
-        results_table = Table(title=f"🎯 Scan Results for {scan_data.get('target_ip', 'Unknown')}", show_header=True, header_style="bold magenta")
+        results_table = Table(
+            title=f"🎯 Scan Results for {scan_data.get('target_ip', 'Unknown')}", 
+            show_header=True, 
+            header_style="bold magenta"
+        )
         results_table.add_column("Port", style="cyan", width=8)
         results_table.add_column("Service", style="green", width=15)
         results_table.add_column("Version", style="yellow", width=25)
@@ -1776,12 +1812,19 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
         results_table.add_column("Vulnerabilities", style="red", width=20)
 
         for result in sorted(results, key=lambda x: x.port):
-            vuln_text = ", ".join(result.vulnerabilities[:2]) if result.vulnerabilities else "None"
+            vuln_text = (
+                ", ".join(result.vulnerabilities[:2]) 
+                if result.vulnerabilities else "None"
+            )
             if len(result.vulnerabilities) > 2:
-                vuln_text += f" (+{len(result.vulnerabilities) - 2} more)"
+                additional_vulns = len(result.vulnerabilities) - 2
+                vuln_text += f" (+{additional_vulns} more)"
 
             confidence_text = f"{result.confidence:.2f}" if hasattr(result, 'confidence') else "N/A"
-            version_text = result.version[:25] + "..." if len(result.version) > 25 else result.version
+            version_text = (
+                result.version[:25] + "..." 
+                if len(result.version) > 25 else result.version
+            )
 
             results_table.add_row(
                 str(result.port),
@@ -1796,8 +1839,12 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
         # Display threat intelligence if available
         if scan_data.get("threat_intelligence"):
             threat_data = scan_data["threat_intelligence"]
+            malicious_status = (
+                '[red]Yes[/red]' if threat_data.get('malicious', False) 
+                else '[green]No[/green]'
+            )
             threat_panel = Panel(
-                f"🚨 Malicious: {'[red]Yes[/red]' if threat_data.get('malicious', False) else '[green]No[/green]'}\n"
+                f"🚨 Malicious: {malicious_status}\n"
                 f"📊 Reputation Score: {threat_data.get('reputation_score', 0)}\n"
                 f"🔍 Sources: {', '.join(threat_data.get('sources', []))}",
                 title="🛡️ Threat Intelligence",
@@ -1808,9 +1855,13 @@ def display_enhanced_results(scan_data: Dict[str, Any]):
         # Display cloud information if available
         if scan_data.get("cloud_info"):
             cloud_data = scan_data["cloud_info"]
+            metadata_status = (
+                '[yellow]Yes[/yellow]' if cloud_data.get('metadata_accessible', False) 
+                else '[green]No[/green]'
+            )
             cloud_panel = Panel(
                 f"🏢 Provider: {cloud_data.get('provider', 'Unknown')}\n"
-                f"🔐 Metadata Accessible: {'[yellow]Yes[/yellow]' if cloud_data.get('metadata_accessible', False) else '[green]No[/green]'}\n"
+                f"🔐 Metadata Accessible: {metadata_status}\n"
                 f"📊 Confidence: {cloud_data.get('confidence', 0):.2f}",
                 title="☁️ Cloud Infrastructure",
                 border_style="blue"
@@ -1840,15 +1891,31 @@ async def save_results_prompt(scan_data: Dict[str, Any]):
         format_table.add_column("Format", style="green")
         format_table.add_column("Description", style="white")
 
-        format_table.add_row("1", "📊 Interactive HTML", "Rich interactive report with charts and graphs")
-        format_table.add_row("2", "📝 Enhanced Text", "Comprehensive text report with emojis")
-        format_table.add_row("3", "📋 JSON", "Machine-readable format for automation")
-        format_table.add_row("4", "📈 CSV", "Spreadsheet-compatible format")
-        format_table.add_row("5", "🎯 All Formats", "Generate all report types")
+        format_table.add_row(
+            "1", "📊 Interactive HTML", "Rich interactive report with charts and graphs"
+        )
+        format_table.add_row(
+            "2", "📝 Enhanced Text", "Comprehensive text report with emojis"
+        )
+        format_table.add_row(
+            "3", "📋 JSON", "Machine-readable format for automation"
+        )
+        format_table.add_row(
+            "4", "📈 CSV", "Spreadsheet-compatible format"
+        )
+        format_table.add_row(
+            "5", "🎯 All Formats", "Generate all report types"
+        )
 
         console.print(format_table)
         format_choice = console.input("[yellow]Select format (1-5): [/yellow]")
-        filename = console.input("[cyan]Enter base filename (without extension): [/cyan]") or f"aura_scan_{scan_data.get('target_ip', 'unknown')}_{int(time.time())}"
+        default_filename = (
+            f"aura_scan_{scan_data.get('target_ip', 'unknown')}_{int(time.time())}"
+        )
+        filename = (
+            console.input("[cyan]Enter base filename (without extension): [/cyan]") 
+            or default_filename
+        )
     else:
         print("\nSelect report format:")
         print("1. Interactive HTML")
@@ -1857,7 +1924,8 @@ async def save_results_prompt(scan_data: Dict[str, Any]):
         print("4. CSV")
         print("5. All Formats")
         format_choice = input("Select format (1-5): ")
-        filename = input("Enter base filename: ") or f"aura_scan_{scan_data.get('target_ip', 'unknown')}_{int(time.time())}"
+        default_name = f"aura_scan_{scan_data.get('target_ip', 'unknown')}_{int(time.time())}"
+        filename = input("Enter base filename: ") or default_name
 
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     base_filename = f"{filename}_{timestamp}"
@@ -2062,10 +2130,13 @@ def analyze_ssl_certificate(host, port):
             with context.wrap_socket(sock, server_hostname=host) as ssock:
                 cert = ssock.getpeercert()
                 if cert:
+                    subject = cert.get('subject', [[]])
+                    issuer = cert.get('issuer', [[]])
                     return {
-                        'common_name': cert.get('subject', [[]])[0][0][1] if cert.get('subject') else 'Unknown',
-                        'issuer_org': cert.get('issuer', [[]])[0][0][1] if cert.get('issuer') else 'Unknown',
-                        'vulnerabilities': []  # Basic implementation without detailed vulnerability checking
+                        'common_name': subject[0][0][1] if subject else 'Unknown',
+                        'issuer_org': issuer[0][0][1] if issuer else 'Unknown',
+                        # Basic implementation without detailed vulnerability checking
+                        'vulnerabilities': []
                     }
     except (ssl.SSLError, socket.error, ValueError, IndexError):
         pass
@@ -2368,7 +2439,9 @@ async def main():
         # Get target
         try:
             if RICH_AVAILABLE:
-                target_input = console.input("\n[bold cyan]🎯 Enter target IP address or hostname: [/bold cyan]")
+                target_input = console.input(
+                    "\n[bold cyan]🎯 Enter target IP address or hostname: [/bold cyan]"
+                )
             else:
                 target_input = input("\nEnter target IP address or hostname: ")
         except (KeyboardInterrupt, EOFError):
@@ -2420,7 +2493,7 @@ async def main():
         if scan_mode == "turbo":
             if RICH_AVAILABLE:
                 console.print("\n[bold green]🚀 Launching Turbo Scan...[/bold green]")
-            
+
             if not SHUTDOWN_REQUESTED:
                 scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
                 scan_data = {
@@ -2465,12 +2538,15 @@ async def main():
             # Check for Tor proxy
             if check_tor_proxy():
                 if RICH_AVAILABLE:
-                    console.print("[green]✅ Tor proxy detected. Configuring anonymous scan...[/green]")
+                    console.print(
+                        "[green]✅ Tor proxy detected. Configuring anonymous scan...[/green]"
+                    )
                 # Configure Tor
                 socks.set_default_proxy(socks.SOCKS5, "127.0.0.1", 9050)
                 socket.socket = socks.socksocket
 
-                scan_results = await ghost_scan_mode(TARGET_IP, scan_ports)  # Use ghost mode for anonymity
+                # Use ghost mode for anonymity
+                scan_results = await ghost_scan_mode(TARGET_IP, scan_ports)
                 scan_data = {
                     "scan_results": scan_results,
                     "target_ip": TARGET_IP,
@@ -2479,14 +2555,16 @@ async def main():
                 }
             else:
                 if RICH_AVAILABLE:
-                    console.print("[red]❌ Tor proxy not found. Please start Tor service.[/red]")
+                    console.print(
+                        "[red]❌ Tor proxy not found. Please start Tor service.[/red]"
+                    )
                 else:
                     #adding tor services to anonymous scanner
                     print("[!] Tor proxy not found. Please start Tor service.")
                     #  1. First download tor services from tor.com
                     #  2. Install tor services
                     #  3. Open terminal and start services
-                    #  caution if you using window you must run tor.exe from same installed folder of Tor
+                    #  caution: if using Windows, run tor.exe from Tor install folder
                     #  5. tor service must run in port 9050
                 return
 
@@ -2506,7 +2584,9 @@ async def main():
         if scan_data and not SHUTDOWN_REQUESTED:
             scan_duration = time.time() - SCAN_START_TIME
             if RICH_AVAILABLE:
-                console.print(f"\n[bold green]✅ Scan completed in {scan_duration:.2f} seconds[/bold green]")
+                console.print(
+                    f"\n[bold green]✅ Scan completed in {scan_duration:.2f} seconds[/bold green]"
+                )
             else:
                 print(f"\n[*] Scan completed in {scan_duration:.2f} seconds")
 
@@ -2521,8 +2601,12 @@ async def main():
             display_enhanced_results(scan_data)
 
         if RICH_AVAILABLE:
-            console.print("\n[bold green]🎯 Thank you for using Aura-sec v3.0.0![/bold green]")
-            console.print("[dim]🛡️ Stay secure and happy hacking! 🛡️[/dim]")
+            console.print(
+                "\n[bold green]🎯 Thank you for using Aura-sec v3.0.0![/bold green]"
+            )
+            console.print(
+                "[dim]🛡️ Stay secure and happy hacking! 🛡️[/dim]"
+            )
         else:
             print("\nThank you for using Aura-sec v3.0.0!")
             print("Stay secure and happy hacking!")
@@ -2551,7 +2635,7 @@ if __name__ == "__main__":
     try:
         # Setup signal handlers first
         setup_signal_handlers()
-        
+
         # Try to run async main
         asyncio.run(main())
     except KeyboardInterrupt:
