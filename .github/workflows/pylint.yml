@@ -1,4 +1,4 @@
-name: Aura-sec v3.0.0 CI/CD
+name: Aura-sec v4.0.0 CI/CD
 
 on: [push, pull_request]
 

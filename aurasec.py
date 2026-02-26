@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 """
-Aura-sec v3.1.1 - The World's Most Advanced Open-Source Security Scanner
+Aura-sec v4.0.0 - The World's Most Advanced Open-Source Security Scanner
 A revolutionary cybersecurity reconnaissance tool with AI-powered features.
 
 Features:
@@ -14,6 +14,10 @@ Features:
 - Comprehensive reporting with charts, graphs and executive summaries
 - Plugin architecture for unlimited extensibility
 - IoT and embedded device specialized detection
+- Subnet/CIDR network scanning and host discovery
+- DNS enumeration and record analysis
+- HTTP security headers analysis
+- Command-line argument support for scripted/non-interactive usage
 """
 import sys
 import signal
@@ -33,6 +37,8 @@ import urllib.parse
 import urllib.error
 import asyncio
 import subprocess
+import argparse
+import ipaddress
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
@@ -103,8 +109,8 @@ console = Console() if RICH_AVAILABLE else None
 SHUTDOWN_REQUESTED = False
 
 # Version and branding
-VERSION = "3.1.1"
-BANNER_TEXT = "Aura-sec v3.1.1 - World's Most Advanced Security Scanner"
+VERSION = "4.0.0"
+BANNER_TEXT = "Aura-sec v4.0.0 - World's Most Advanced Security Scanner"
 
 # Advanced scanning modes
 @dataclass
@@ -1034,8 +1040,382 @@ deep_learning = DeepLearningDetector()
 blockchain_detector = BlockchainDetector()
 iot_scanner = IoTSpecializedScanner()
 api_tester = APISecurityTester()
+
+
+class DNSEnumerator:
+    """DNS record enumeration and subdomain discovery."""
+
+    def __init__(self):
+        self.record_types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA']
+        self.common_subdomains = [
+            'www', 'mail', 'ftp', 'smtp', 'pop', 'imap', 'webmail',
+            'admin', 'portal', 'vpn', 'remote', 'ns1', 'ns2',
+            'api', 'dev', 'staging', 'test', 'beta', 'app',
+            'cdn', 'static', 'assets', 'media', 'img', 'images',
+            'db', 'database', 'sql', 'mysql', 'redis', 'mongo',
+            'git', 'svn', 'jenkins', 'ci', 'build', 'deploy',
+            'monitor', 'grafana', 'kibana', 'elastic', 'logs',
+            'blog', 'shop', 'store', 'docs', 'wiki', 'help',
+            'support', 'status', 'dashboard', 'panel', 'cpanel',
+            'mx', 'relay', 'gateway', 'proxy', 'lb', 'load',
+        ]
+
+    def enumerate_dns(self, domain: str) -> Dict[str, Any]:
+        """Perform DNS enumeration on a domain."""
+        dns_results = {
+            "domain": domain,
+            "records": {},
+            "subdomains": [],
+            "mail_servers": [],
+            "name_servers": [],
+        }
+
+        # Resolve A record
+        try:
+            ip_addr = socket.gethostbyname(domain)
+            dns_results["records"]["A"] = [ip_addr]
+        except socket.gaierror:
+            dns_results["records"]["A"] = []
+
+        # Resolve all addresses (A/AAAA)
+        try:
+            addr_info = socket.getaddrinfo(domain, None)
+            ipv4_addrs = set()
+            ipv6_addrs = set()
+            for info in addr_info:
+                addr = info[4][0]
+                if info[0] == socket.AF_INET:
+                    ipv4_addrs.add(addr)
+                elif info[0] == socket.AF_INET6:
+                    ipv6_addrs.add(addr)
+            if ipv4_addrs:
+                dns_results["records"]["A"] = list(ipv4_addrs)
+            if ipv6_addrs:
+                dns_results["records"]["AAAA"] = list(ipv6_addrs)
+        except (socket.gaierror, OSError):
+            pass
+
+        # MX record lookup via DNS query
+        mx_records = self._query_mx(domain)
+        if mx_records:
+            dns_results["records"]["MX"] = mx_records
+            dns_results["mail_servers"] = mx_records
+
+        # NS record lookup
+        ns_records = self._query_ns(domain)
+        if ns_records:
+            dns_results["records"]["NS"] = ns_records
+            dns_results["name_servers"] = ns_records
+
+        # Subdomain enumeration
+        dns_results["subdomains"] = self._enumerate_subdomains(domain)
+
+        return dns_results
+
+    def _query_mx(self, domain: str) -> List[str]:
+        """Query MX records using raw DNS."""
+        try:
+            mx_results = []
+            # Use getaddrinfo to check common mail subdomains
+            for prefix in ['mail', 'smtp', 'mx']:
+                try:
+                    mx_host = f"{prefix}.{domain}"
+                    socket.gethostbyname(mx_host)
+                    mx_results.append(mx_host)
+                except socket.gaierror:
+                    continue
+            return mx_results
+        except (socket.gaierror, OSError):
+            return []
+
+    def _query_ns(self, domain: str) -> List[str]:
+        """Query NS records using DNS resolution."""
+        try:
+            ns_results = []
+            for prefix in ['ns1', 'ns2', 'ns3', 'dns', 'dns1', 'dns2']:
+                try:
+                    ns_host = f"{prefix}.{domain}"
+                    socket.gethostbyname(ns_host)
+                    ns_results.append(ns_host)
+                except socket.gaierror:
+                    continue
+            return ns_results
+        except (socket.gaierror, OSError):
+            return []
+
+    def _enumerate_subdomains(self, domain: str) -> List[Dict[str, str]]:
+        """Enumerate subdomains by attempting DNS resolution."""
+        found_subdomains = []
+        for sub in self.common_subdomains:
+            try:
+                hostname = f"{sub}.{domain}"
+                ip_addr = socket.gethostbyname(hostname)
+                found_subdomains.append({
+                    "subdomain": hostname,
+                    "ip": ip_addr
+                })
+            except socket.gaierror:
+                continue
+        return found_subdomains
+
+
+class HTTPSecurityAnalyzer:
+    """HTTP security headers analysis."""
+
+    def __init__(self):
+        self.security_headers = {
+            "Strict-Transport-Security": {
+                "description": "HTTP Strict Transport Security (HSTS)",
+                "severity": "HIGH",
+                "recommendation": "Add 'Strict-Transport-Security: "
+                                   "max-age=31536000; includeSubDomains'"
+            },
+            "Content-Security-Policy": {
+                "description": "Content Security Policy (CSP)",
+                "severity": "HIGH",
+                "recommendation": "Implement a Content-Security-Policy header"
+            },
+            "X-Content-Type-Options": {
+                "description": "MIME type sniffing prevention",
+                "severity": "MEDIUM",
+                "recommendation": "Add 'X-Content-Type-Options: nosniff'"
+            },
+            "X-Frame-Options": {
+                "description": "Clickjacking protection",
+                "severity": "MEDIUM",
+                "recommendation": "Add 'X-Frame-Options: DENY' or 'SAMEORIGIN'"
+            },
+            "X-XSS-Protection": {
+                "description": "XSS filter",
+                "severity": "LOW",
+                "recommendation": "Add 'X-XSS-Protection: 1; mode=block'"
+            },
+            "Referrer-Policy": {
+                "description": "Referrer information control",
+                "severity": "LOW",
+                "recommendation": "Add 'Referrer-Policy: strict-origin-when-cross-origin'"
+            },
+            "Permissions-Policy": {
+                "description": "Browser feature permissions",
+                "severity": "MEDIUM",
+                "recommendation": "Implement a Permissions-Policy header"
+            },
+            "X-Permitted-Cross-Domain-Policies": {
+                "description": "Cross-domain policy control",
+                "severity": "LOW",
+                "recommendation": "Add 'X-Permitted-Cross-Domain-Policies: none'"
+            },
+        }
+
+        self.insecure_headers = {
+            "Server": "Server version disclosure",
+            "X-Powered-By": "Technology stack disclosure",
+            "X-AspNet-Version": "ASP.NET version disclosure",
+            "X-AspNetMvc-Version": "ASP.NET MVC version disclosure",
+        }
+
+    def analyze_headers(self, target: str, port: int = 80) -> Dict[str, Any]:
+        """Analyze HTTP security headers of a target."""
+        analysis = {
+            "target": target,
+            "port": port,
+            "headers_received": {},
+            "missing_headers": [],
+            "insecure_headers": [],
+            "security_score": 100.0,
+            "grade": "A+",
+            "recommendations": []
+        }
+
+        # Fetch headers
+        headers = self._fetch_headers(target, port)
+        if not headers:
+            analysis["security_score"] = 0.0
+            analysis["grade"] = "F"
+            analysis["recommendations"].append(
+                "Could not connect to target"
+            )
+            return analysis
+
+        analysis["headers_received"] = headers
+
+        # Check for missing security headers
+        for header_name, header_info in self.security_headers.items():
+            header_found = False
+            for received in headers:
+                if received.lower() == header_name.lower():
+                    header_found = True
+                    break
+            if not header_found:
+                analysis["missing_headers"].append({
+                    "header": header_name,
+                    "description": header_info["description"],
+                    "severity": header_info["severity"],
+                })
+                analysis["recommendations"].append(
+                    header_info["recommendation"]
+                )
+                severity_penalty = {
+                    "HIGH": 15.0, "MEDIUM": 10.0, "LOW": 5.0
+                }
+                analysis["security_score"] -= severity_penalty.get(
+                    header_info["severity"], 5.0
+                )
+
+        # Check for insecure headers that reveal information
+        for header_name, description in self.insecure_headers.items():
+            for received in headers:
+                if received.lower() == header_name.lower():
+                    analysis["insecure_headers"].append({
+                        "header": header_name,
+                        "value": headers[received],
+                        "description": description,
+                    })
+                    analysis["security_score"] -= 5.0
+                    analysis["recommendations"].append(
+                        f"Remove or obscure the '{header_name}' header"
+                    )
+
+        # Calculate grade
+        analysis["security_score"] = max(analysis["security_score"], 0.0)
+        analysis["grade"] = self._calculate_grade(
+            analysis["security_score"]
+        )
+
+        return analysis
+
+    def _fetch_headers(self, target: str, port: int) -> Optional[Dict]:
+        """Fetch HTTP headers from target."""
+        try:
+            scheme = "https" if port == 443 else "http"
+            url = f"{scheme}://{target}:{port}/"
+            if REQUESTS_AVAILABLE:
+                response = requests.get(
+                    url, timeout=5, verify=False,  # nosec
+                    allow_redirects=False
+                )
+                return dict(response.headers)
+            # Fallback to urllib
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "Aura-sec Security Scanner"}
+            )
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
+                return dict(resp.headers)
+        except (urllib.error.URLError, OSError, ValueError):
+            pass
+        return None
+
+    def _calculate_grade(self, score: float) -> str:
+        """Calculate security grade from score."""
+        if score >= 90:
+            return "A+"
+        if score >= 80:
+            return "A"
+        if score >= 70:
+            return "B"
+        if score >= 60:
+            return "C"
+        if score >= 50:
+            return "D"
+        return "F"
+
+
+class SubnetScanner:
+    """Subnet/CIDR scanning for host discovery."""
+
+    async def discover_hosts(self, cidr: str,
+                             timeout: float = 1.0) -> List[Dict[str, Any]]:
+        """Discover live hosts in a CIDR range."""
+        try:
+            network = ipaddress.ip_network(cidr, strict=False)
+        except ValueError:
+            return []
+
+        hosts = list(network.hosts())
+        if len(hosts) > 1024:
+            hosts = hosts[:1024]  # Limit to /22 equivalent
+
+        live_hosts = []
+        semaphore = asyncio.Semaphore(100)
+
+        async def check_host(ip_obj):
+            async with semaphore:
+                ip_str = str(ip_obj)
+                result = await self._ping_host(ip_str, timeout)
+                if result["alive"]:
+                    live_hosts.append(result)
+
+        if RICH_AVAILABLE:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                console=console
+            ) as progress:
+                task = progress.add_task(
+                    "🔍 Discovering hosts...", total=len(hosts)
+                )
+                batch_size = 50
+                for i in range(0, len(hosts), batch_size):
+                    if SHUTDOWN_REQUESTED:
+                        break
+                    batch = hosts[i:i + batch_size]
+                    await asyncio.gather(
+                        *[check_host(ip_obj) for ip_obj in batch],
+                        return_exceptions=True
+                    )
+                    progress.update(task, advance=len(batch))
+        else:
+            await asyncio.gather(
+                *[check_host(ip_obj) for ip_obj in hosts],
+                return_exceptions=True
+            )
+
+        return sorted(live_hosts, key=lambda x: ipaddress.ip_address(x["ip"]))
+
+    async def _ping_host(self, ip_str: str,
+                         timeout: float) -> Dict[str, Any]:
+        """Check if a host is alive using TCP connect on common ports."""
+        result = {"ip": ip_str, "alive": False, "open_ports": [],
+                  "hostname": ""}
+
+        # Try common ports to check if host is alive
+        quick_ports = [80, 443, 22, 21, 25, 8080, 3389]
+        for port in quick_ports:
+            try:
+                future = asyncio.open_connection(ip_str, port)
+                _reader, writer = await asyncio.wait_for(
+                    future, timeout=timeout
+                )
+                writer.close()
+                await writer.wait_closed()
+                result["alive"] = True
+                result["open_ports"].append(port)
+            except (asyncio.TimeoutError, ConnectionRefusedError, OSError):
+                continue
+
+        # Reverse DNS lookup
+        if result["alive"]:
+            try:
+                hostname = socket.gethostbyaddr(ip_str)
+                result["hostname"] = hostname[0]
+            except (socket.herror, socket.gaierror, OSError):
+                pass
+
+        return result
+
+
+# Initialize v4.0.0 components
+dns_enumerator = DNSEnumerator()
+http_security = HTTPSecurityAnalyzer()
+subnet_scanner = SubnetScanner()
 def display_banner():
-    """Display the enhanced banner with version 3.0.0."""
+    """Display the enhanced banner with version information."""
     if RICH_AVAILABLE:
         banner_text = r"""
    ('-.                 _  .-')     ('-.               .-')      ('-.
@@ -1079,14 +1459,22 @@ def display_banner():
              "Anti-detection and traffic obfuscation"),
             ("🌐 Async Scanning", "✅ Enabled",
              "10x faster performance with async I/O"),
-            ("🧠 Deep Learning", "✅ NEW",
+            ("🧠 Deep Learning", "✅ Enabled",
              "Advanced AI for zero-day service detection"),
-            ("₿ Blockchain Detection", "✅ NEW",
+            ("₿ Blockchain Detection", "✅ Enabled",
              "Cryptocurrency and DeFi protocol detection"),
-            ("🔌 IoT Specialized", "✅ NEW",
+            ("🔌 IoT Specialized", "✅ Enabled",
              "Enhanced embedded device fingerprinting"),
-            ("🔗 API Security", "✅ NEW",
+            ("🔗 API Security", "✅ Enabled",
              "REST/GraphQL API vulnerability assessment"),
+            ("🌐 Subnet/CIDR Scan", "✅ NEW",
+             "Network host discovery and sweep scanning"),
+            ("📡 DNS Enumeration", "✅ NEW",
+             "DNS record analysis and subdomain discovery"),
+            ("🔒 HTTP Security", "✅ NEW",
+             "HTTP security headers analysis and grading"),
+            ("⌨️ CLI Arguments", "✅ NEW",
+             "Non-interactive command-line argument support"),
         ]
 
         for feature, status, description in features:
@@ -1137,7 +1525,13 @@ def main_menu():
             ("6", "👻 Anonymous Scan",
              "Tor-based anonymous reconnaissance"),
             ("7", "⚡ Legacy Mode",
-             "Classic scanning (v2.5.1 compatibility)")
+             "Classic scanning (v2.5.1 compatibility)"),
+            ("8", "🌐 Subnet Scan",
+             "CIDR network host discovery and sweep"),
+            ("9", "📡 DNS Enumeration",
+             "DNS records and subdomain discovery"),
+            ("10", "🔒 HTTP Security",
+             "HTTP security headers analysis"),
         ]
 
         for option, scan_type, description in menu_options:
@@ -1146,7 +1540,7 @@ def main_menu():
         console.print(menu_table)
         try:
             choice = console.input(
-                "\n[bold yellow]🎯 Enter your choice (1-7): [/bold yellow]")
+                "\n[bold yellow]🎯 Enter your choice (1-10): [/bold yellow]")
         except (KeyboardInterrupt, EOFError):
             console.print("\n[yellow]⏹️ Menu selection interrupted by user[/yellow]")
             SHUTDOWN_REQUESTED = True
@@ -1160,8 +1554,11 @@ def main_menu():
         print("5. 🔍 Deep Probe - Vulnerability assessment")
         print("6. 👻 Anonymous Scan - Tor-based scanning")
         print("7. ⚡ Legacy Mode - Classic scanning")
+        print("8. 🌐 Subnet Scan - CIDR network discovery")
+        print("9. 📡 DNS Enumeration - DNS record analysis")
+        print("10. 🔒 HTTP Security - Security headers analysis")
         try:
-            choice = input("Enter your choice (1-7): ")
+            choice = input("Enter your choice (1-10): ")
         except (KeyboardInterrupt, EOFError):
             print("\n[*] Menu selection interrupted by user")
             SHUTDOWN_REQUESTED = True
@@ -1764,7 +2161,7 @@ def create_enhanced_text_report(scan_data: Dict[str, Any], filename: str):
             f.write("🔍 DETAILED PORT SCAN RESULTS\n")
             f.write("-" * 40 + "\n")
 
-            for result in sorted(results, key=lambda x: x.port):
+            for result in sorted(scan_results, key=lambda x: x.port):
                 f.write(f"🔓 Port {result.port}: {result.status.upper()}\n")
                 f.write(f"   🏷️ Service: {result.service}\n")
                 if hasattr(result, 'confidence') and result.confidence > 0:
@@ -2307,7 +2704,7 @@ def save_results_json(filename, sorted_results, scan_stats):
             "start_time": scan_stats['start_time'],
             "duration": scan_stats['duration'],
             "ports_scanned": scan_stats['ports_scanned'],
-            "scanner": "Aura-sec v2.5.1"
+            "scanner": f"Aura-sec v{VERSION}"
         },
         "results": []
     }
@@ -2409,6 +2806,504 @@ def display_results_and_save():
     else:
         print("[*] No open ports found.")
 
+
+def _display_dns_results(dns_data: Dict[str, Any]):
+    """Display DNS enumeration results."""
+    if RICH_AVAILABLE:
+        console.print(Panel(
+            f"[bold]Domain:[/bold] {dns_data['domain']}",
+            title="📡 DNS Enumeration Results",
+            border_style="cyan"
+        ))
+
+        # DNS records table
+        records_table = Table(
+            title="DNS Records",
+            show_header=True, header_style="bold cyan"
+        )
+        records_table.add_column("Type", style="yellow", width=8)
+        records_table.add_column("Values", style="green")
+
+        for rtype, values in dns_data.get("records", {}).items():
+            if values:
+                records_table.add_row(rtype, ", ".join(values))
+        console.print(records_table)
+
+        # Subdomains table
+        subdomains = dns_data.get("subdomains", [])
+        if subdomains:
+            sub_table = Table(
+                title=f"Discovered Subdomains ({len(subdomains)})",
+                show_header=True, header_style="bold green"
+            )
+            sub_table.add_column("Subdomain", style="cyan")
+            sub_table.add_column("IP Address", style="yellow")
+            for sub in subdomains:
+                sub_table.add_row(sub["subdomain"], sub["ip"])
+            console.print(sub_table)
+        else:
+            console.print("[yellow]No subdomains discovered[/yellow]")
+    else:
+        print(f"\n[*] DNS Enumeration Results for {dns_data['domain']}")
+        print("-" * 50)
+        for rtype, values in dns_data.get("records", {}).items():
+            if values:
+                print(f"  {rtype}: {', '.join(values)}")
+        subdomains = dns_data.get("subdomains", [])
+        if subdomains:
+            print(f"\n[*] Discovered {len(subdomains)} subdomains:")
+            for sub in subdomains:
+                print(f"  {sub['subdomain']} -> {sub['ip']}")
+
+
+def _display_http_security_results(analysis: Dict[str, Any]):
+    """Display HTTP security analysis results."""
+    if RICH_AVAILABLE:
+        grade = analysis["grade"]
+        grade_color = {
+            "A+": "green", "A": "green", "B": "yellow",
+            "C": "yellow", "D": "red", "F": "red"
+        }.get(grade, "white")
+
+        console.print(Panel(
+            f"[bold]Target:[/bold] {analysis['target']}:{analysis['port']}\n"
+            f"[bold]Grade:[/bold] [{grade_color}]{grade}[/{grade_color}]\n"
+            f"[bold]Score:[/bold] {analysis['security_score']:.0f}/100",
+            title="🔒 HTTP Security Headers Analysis",
+            border_style=grade_color
+        ))
+
+        # Missing headers
+        missing = analysis.get("missing_headers", [])
+        if missing:
+            miss_table = Table(
+                title=f"Missing Security Headers ({len(missing)})",
+                show_header=True, header_style="bold red"
+            )
+            miss_table.add_column("Header", style="cyan")
+            miss_table.add_column("Severity", style="red")
+            miss_table.add_column("Description", style="white")
+            for hdr in missing:
+                miss_table.add_row(
+                    hdr["header"], hdr["severity"],
+                    hdr["description"]
+                )
+            console.print(miss_table)
+
+        # Insecure headers
+        insecure = analysis.get("insecure_headers", [])
+        if insecure:
+            ins_table = Table(
+                title="Information Disclosure Headers",
+                show_header=True, header_style="bold yellow"
+            )
+            ins_table.add_column("Header", style="cyan")
+            ins_table.add_column("Value", style="red")
+            ins_table.add_column("Risk", style="yellow")
+            for hdr in insecure:
+                ins_table.add_row(
+                    hdr["header"], hdr["value"],
+                    hdr["description"]
+                )
+            console.print(ins_table)
+
+        # Recommendations
+        recs = analysis.get("recommendations", [])
+        if recs:
+            console.print("\n[bold cyan]Recommendations:[/bold cyan]")
+            for rec in recs:
+                console.print(f"  💡 {rec}")
+    else:
+        print(f"\n[*] HTTP Security Analysis: {analysis['target']}:{analysis['port']}")
+        print(f"  Grade: {analysis['grade']}  Score: {analysis['security_score']:.0f}/100")
+        for hdr in analysis.get("missing_headers", []):
+            print(f"  MISSING [{hdr['severity']}]: {hdr['header']}")
+        for hdr in analysis.get("insecure_headers", []):
+            print(f"  INSECURE: {hdr['header']} = {hdr['value']}")
+
+
+def _display_subnet_results(live_hosts: List[Dict[str, Any]]):
+    """Display subnet scan results."""
+    if RICH_AVAILABLE:
+        console.print(Panel(
+            f"[bold]Discovered {len(live_hosts)} live host(s)[/bold]",
+            title="🌐 Network Host Discovery Results",
+            border_style="green"
+        ))
+
+        if live_hosts:
+            hosts_table = Table(
+                show_header=True, header_style="bold cyan"
+            )
+            hosts_table.add_column("IP Address", style="green")
+            hosts_table.add_column("Hostname", style="cyan")
+            hosts_table.add_column("Open Ports", style="yellow")
+            for host in live_hosts:
+                ports_str = ", ".join(str(p) for p in host["open_ports"])
+                hosts_table.add_row(
+                    host["ip"],
+                    host.get("hostname", ""),
+                    ports_str
+                )
+            console.print(hosts_table)
+    else:
+        print(f"\n[*] Discovered {len(live_hosts)} live host(s):")
+        for host in live_hosts:
+            ports_str = ", ".join(str(p) for p in host["open_ports"])
+            hostname = host.get("hostname", "")
+            hn_str = f" ({hostname})" if hostname else ""
+            print(f"  {host['ip']}{hn_str} - ports: {ports_str}")
+
+
+async def _run_dns_mode():
+    """Run DNS enumeration mode."""
+    if RICH_AVAILABLE:
+        console.print("\n[bold cyan]📡 DNS Enumeration Mode[/bold cyan]")
+        try:
+            domain = console.input(
+                "[cyan]Enter domain name (e.g. example.com): [/cyan]"
+            ).strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]⏹️ Interrupted[/yellow]")
+            return
+    else:
+        try:
+            domain = input("\nEnter domain name (e.g. example.com): ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n[*] Interrupted")
+            return
+
+    if not domain:
+        return
+
+    start_time = time.time()
+    if RICH_AVAILABLE:
+        console.print(f"[yellow]🔍 Enumerating DNS for {domain}...[/yellow]")
+    else:
+        print(f"[*] Enumerating DNS for {domain}...")
+
+    dns_data = dns_enumerator.enumerate_dns(domain)
+    duration = time.time() - start_time
+
+    _display_dns_results(dns_data)
+
+    if RICH_AVAILABLE:
+        console.print(
+            f"\n[green]✅ DNS enumeration completed in {duration:.2f}s[/green]"
+        )
+    else:
+        print(f"\n[*] Completed in {duration:.2f}s")
+
+
+async def _run_http_security_mode():
+    """Run HTTP security headers analysis mode."""
+    if RICH_AVAILABLE:
+        console.print("\n[bold cyan]🔒 HTTP Security Headers Analysis[/bold cyan]")
+        try:
+            target = console.input(
+                "[cyan]Enter target hostname or IP: [/cyan]"
+            ).strip()
+            port_str = console.input(
+                "[cyan]Enter port (default 443): [/cyan]"
+            ).strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]⏹️ Interrupted[/yellow]")
+            return
+    else:
+        try:
+            target = input("\nEnter target hostname or IP: ").strip()
+            port_str = input("Enter port (default 443): ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n[*] Interrupted")
+            return
+
+    if not target:
+        return
+    port = int(port_str) if port_str.isdigit() else 443
+
+    if RICH_AVAILABLE:
+        console.print(
+            f"[yellow]🔍 Analyzing {target}:{port}...[/yellow]"
+        )
+    else:
+        print(f"[*] Analyzing {target}:{port}...")
+
+    analysis = http_security.analyze_headers(target, port)
+    _display_http_security_results(analysis)
+
+
+async def _run_subnet_mode():
+    """Run subnet/CIDR scanning mode."""
+    if RICH_AVAILABLE:
+        console.print("\n[bold cyan]🌐 Subnet/CIDR Scanning Mode[/bold cyan]")
+        try:
+            cidr = console.input(
+                "[cyan]Enter CIDR range (e.g. 192.168.1.0/24): [/cyan]"
+            ).strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]⏹️ Interrupted[/yellow]")
+            return
+    else:
+        try:
+            cidr = input("\nEnter CIDR range (e.g. 192.168.1.0/24): ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n[*] Interrupted")
+            return
+
+    if not cidr:
+        return
+
+    try:
+        network = ipaddress.ip_network(cidr, strict=False)
+    except ValueError:
+        if RICH_AVAILABLE:
+            console.print("[red]❌ Invalid CIDR notation[/red]")
+        else:
+            print("[!] Invalid CIDR notation")
+        return
+
+    host_count = network.num_addresses - 2
+    if RICH_AVAILABLE:
+        console.print(
+            f"[yellow]🔍 Scanning {host_count} potential hosts "
+            f"in {network}...[/yellow]"
+        )
+    else:
+        print(f"[*] Scanning {host_count} hosts in {network}...")
+
+    start_time = time.time()
+    live_hosts = await subnet_scanner.discover_hosts(cidr)
+    duration = time.time() - start_time
+
+    _display_subnet_results(live_hosts)
+
+    if RICH_AVAILABLE:
+        console.print(
+            f"\n[green]✅ Network scan completed in {duration:.2f}s[/green]"
+        )
+    else:
+        print(f"\n[*] Completed in {duration:.2f}s")
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    """Build command-line argument parser for non-interactive usage."""
+    parser = argparse.ArgumentParser(
+        prog="aurasec",
+        description=(
+            f"Aura-sec v{VERSION} - "
+            "The World's Most Advanced Open-Source Security Scanner"
+        ),
+        epilog="Example: python aurasec.py --target example.com --mode turbo",
+    )
+    parser.add_argument(
+        "--target", "-t",
+        help="Target IP address or hostname"
+    )
+    parser.add_argument(
+        "--mode", "-m",
+        choices=[
+            "turbo", "ghost", "intelligence", "cloud", "deep",
+            "anonymous", "legacy", "subnet", "dns", "http-security"
+        ],
+        default=None,
+        help="Scanning mode (default: interactive menu)"
+    )
+    parser.add_argument(
+        "--ports", "-p",
+        default="1-1024",
+        help="Port range, e.g. '1-1024' or '22,80,443' (default: 1-1024)"
+    )
+    parser.add_argument(
+        "--output", "-o",
+        help="Output file base name for reports"
+    )
+    parser.add_argument(
+        "--format", "-f",
+        choices=["html", "text", "json", "csv", "all"],
+        default=None,
+        help="Report output format"
+    )
+    parser.add_argument(
+        "--version", "-V",
+        action="version",
+        version=f"Aura-sec v{VERSION}"
+    )
+    parser.add_argument(
+        "--cidr",
+        help="CIDR range for subnet scanning (e.g. 192.168.1.0/24)"
+    )
+    parser.add_argument(
+        "--domain",
+        help="Domain name for DNS enumeration"
+    )
+    return parser
+
+
+def parse_ports(port_spec: str) -> List[int]:
+    """Parse a port specification string into a list of port numbers."""
+    ports = set()
+    for part in port_spec.split(","):
+        part = part.strip()
+        if "-" in part:
+            start, end = part.split("-", 1)
+            ports.update(range(int(start), int(end) + 1))
+        else:
+            ports.add(int(part))
+    return sorted(ports)
+
+
+async def run_cli_mode(args: argparse.Namespace):
+    """Run in non-interactive CLI mode using parsed arguments."""
+    global TARGET_IP, SCAN_START_TIME  # pylint: disable=global-statement
+
+    setup_signal_handlers()
+    display_banner()
+
+    mode = args.mode
+
+    # Handle DNS enumeration
+    if mode == "dns":
+        domain = args.domain or args.target
+        if not domain:
+            print("[!] --domain or --target required for DNS mode")
+            return
+        if RICH_AVAILABLE:
+            console.print(f"[yellow]📡 DNS Enumeration: {domain}[/yellow]")
+        dns_data = dns_enumerator.enumerate_dns(domain)
+        _display_dns_results(dns_data)
+        return
+
+    # Handle HTTP security
+    if mode == "http-security":
+        target = args.target
+        if not target:
+            print("[!] --target required for http-security mode")
+            return
+        port = 443
+        # Check if ports arg specifies a single port
+        try:
+            specified_ports = parse_ports(args.ports)
+            if len(specified_ports) == 1:
+                port = specified_ports[0]
+        except (ValueError, IndexError):
+            pass
+        if RICH_AVAILABLE:
+            console.print(
+                f"[yellow]🔒 HTTP Security: {target}:{port}[/yellow]"
+            )
+        analysis = http_security.analyze_headers(target, port)
+        _display_http_security_results(analysis)
+        return
+
+    # Handle subnet scan
+    if mode == "subnet":
+        cidr = args.cidr or args.target
+        if not cidr:
+            print("[!] --cidr or --target required for subnet mode")
+            return
+        start_t = time.time()
+        live_hosts = await subnet_scanner.discover_hosts(cidr)
+        _display_subnet_results(live_hosts)
+        if RICH_AVAILABLE:
+            console.print(
+                f"[green]✅ Done in {time.time() - start_t:.2f}s[/green]"
+            )
+        return
+
+    # Port-scanning modes
+    target = args.target
+    if not target:
+        print("[!] --target is required")
+        return
+
+    try:
+        TARGET_IP = socket.gethostbyname(target)
+    except socket.gaierror:
+        print(f"[!] Could not resolve '{target}'")
+        return
+
+    scan_ports = parse_ports(args.ports)
+    SCAN_START_TIME = time.time()
+
+    mode_map = {
+        "turbo": turbo_scan_mode,
+        "ghost": ghost_scan_mode,
+        "legacy": turbo_scan_mode,
+    }
+
+    scan_data = None
+    if mode in ("intelligence", "deep"):
+        scan_data = await intelligence_scan_mode(TARGET_IP, scan_ports)
+    elif mode == "cloud":
+        scan_data = await cloud_hunter_mode(TARGET_IP, scan_ports)
+    elif mode in mode_map:
+        scan_func = mode_map[mode]
+        scan_results = await scan_func(TARGET_IP, scan_ports)
+        scan_data = {
+            "scan_results": scan_results,
+            "target_ip": TARGET_IP,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "scan_mode": mode
+        }
+    else:
+        scan_results = await turbo_scan_mode(TARGET_IP, scan_ports)
+        scan_data = {
+            "scan_results": scan_results,
+            "target_ip": TARGET_IP,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "scan_mode": mode
+        }
+
+    if scan_data:
+        duration = time.time() - SCAN_START_TIME
+        if RICH_AVAILABLE:
+            console.print(
+                f"\n[green]✅ Completed in {duration:.2f}s[/green]"
+            )
+        display_enhanced_results(scan_data)
+
+        # Save report if output specified
+        if args.output and args.format:
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            base = f"{args.output}_{timestamp}"
+            fmt = args.format
+            if fmt in ("html", "all"):
+                create_interactive_report(scan_data, f"{base}.html")
+            if fmt in ("text", "all"):
+                create_enhanced_text_report(scan_data, f"{base}.txt")
+            if fmt in ("json", "all"):
+                json_data = scan_data.copy()
+                if "scan_results" in json_data:
+                    json_data["scan_results"] = [
+                        {
+                            "port": r.port, "status": r.status,
+                            "service": r.service, "version": r.version,
+                            "vulnerabilities": r.vulnerabilities,
+                            "confidence": getattr(r, 'confidence', 0.0),
+                            "response_time": getattr(r, 'response_time', 0.0)
+                        } for r in json_data["scan_results"]
+                    ]
+                with open(f"{base}.json", 'w', encoding='utf-8') as f:
+                    json.dump(json_data, f, indent=2, default=str)
+            if fmt in ("csv", "all"):
+                csv_res = scan_data.get(
+                    "scan_results", scan_data.get("all_results", [])
+                )
+                with open(f"{base}.csv", 'w', newline='',
+                          encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow([
+                        'Port', 'Service', 'Version',
+                        'Vulnerabilities', 'Confidence'
+                    ])
+                    for r in csv_res:
+                        writer.writerow([
+                            r.port, r.service, r.version,
+                            '; '.join(r.vulnerabilities),
+                            getattr(r, 'confidence', 0.0)
+                        ])
+
+
 # --- Enhanced Main Program ---
 async def main():
     """Main program with enhanced async capabilities."""
@@ -2433,17 +3328,33 @@ async def main():
             "4": "cloud",
             "5": "deep",
             "6": "anonymous",
-            "7": "legacy"
+            "7": "legacy",
+            "8": "subnet",
+            "9": "dns",
+            "10": "http_security"
         }
 
         scan_mode = scan_modes.get(scan_choice, "legacy")
 
         # Configure advanced options
-        if scan_mode != "legacy":
+        if scan_mode not in ("legacy", "dns", "http_security", "subnet"):
             config_result = configure_advanced_options(scan_mode)
             if config_result is None:
                 # Configuration was interrupted, exit gracefully
                 return
+
+        # --- Handle modes that don't need port scanning ---
+        if scan_mode == "dns":
+            await _run_dns_mode()
+            return
+
+        if scan_mode == "http_security":
+            await _run_http_security_mode()
+            return
+
+        if scan_mode == "subnet":
+            await _run_subnet_mode()
+            return
 
         # Get target
         try:
@@ -2611,13 +3522,13 @@ async def main():
 
         if RICH_AVAILABLE:
             console.print(
-                "\n[bold green]🎯 Thank you for using Aura-sec v3.0.0![/bold green]"
+                f"\n[bold green]🎯 Thank you for using Aura-sec v{VERSION}![/bold green]"
             )
             console.print(
                 "[dim]🛡️ Stay secure and happy hacking! 🛡️[/dim]"
             )
         else:
-            print("\nThank you for using Aura-sec v3.0.0!")
+            print(f"\nThank you for using Aura-sec v{VERSION}!")
             print("Stay secure and happy hacking!")
 
     except KeyboardInterrupt:
@@ -2645,8 +3556,16 @@ if __name__ == "__main__":
         # Setup signal handlers first
         setup_signal_handlers()
 
-        # Try to run async main
-        asyncio.run(main())
+        # Check for CLI arguments
+        _parser = build_argument_parser()
+        _args, _unknown = _parser.parse_known_args()
+
+        if _args.mode or _args.target or _args.cidr or _args.domain:
+            # Non-interactive CLI mode
+            asyncio.run(run_cli_mode(_args))
+        else:
+            # Interactive menu mode
+            asyncio.run(main())
     except KeyboardInterrupt:
         print("\n[*] Interrupted by user (Ctrl+C). Exiting gracefully...")
         sys.exit(0)

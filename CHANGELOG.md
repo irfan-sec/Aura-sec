@@ -5,6 +5,63 @@ All notable changes to Aura-sec will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-02-26 🚀
+
+### 🎉 Major Release - Professional-Grade Feature Set
+
+This release transforms Aura-sec into a fully-featured professional security tool
+with non-interactive CLI support, network discovery, DNS enumeration, and HTTP
+security analysis.
+
+### ✨ Added
+
+#### ⌨️ Command-Line Interface (NEW)
+- **Argparse Support**: Full non-interactive CLI for scripted/automated usage
+- **All Modes**: `--mode turbo|ghost|intelligence|cloud|deep|dns|http-security|subnet`
+- **Custom Ports**: `--ports 22,80,443` or `--ports 1-65535`
+- **Report Export**: `--output report --format json|csv|html|text|all`
+- **Version Flag**: `--version` / `-V` for quick version check
+
+#### 🌐 Subnet/CIDR Scanning (NEW)
+- **Host Discovery**: TCP-based live host detection across entire subnets
+- **CIDR Notation**: Standard `192.168.1.0/24` network specification
+- **Reverse DNS**: Automatic hostname resolution for discovered hosts
+- **Async Scanning**: High-performance concurrent host checking
+- **Progress Display**: Real-time progress with Rich UI
+
+#### 📡 DNS Enumeration (NEW)
+- **Record Analysis**: A, AAAA, MX, NS record enumeration
+- **Subdomain Discovery**: 60+ common subdomain brute-force checks
+- **Mail Server Detection**: Automatic mail infrastructure mapping
+- **Name Server Mapping**: DNS infrastructure identification
+- **IPv6 Support**: Dual-stack address resolution
+
+#### 🔒 HTTP Security Headers Analysis (NEW)
+- **Header Checking**: 8 critical security headers analyzed
+- **Security Grading**: A+ to F grading system
+- **Information Disclosure**: Detect Server, X-Powered-By, etc.
+- **Recommendations**: Actionable remediation guidance per header
+- **Score Calculation**: Weighted scoring based on severity
+
+### 🐛 Bug Fixes
+
+- **Text Report Crash**: Fixed `create_enhanced_text_report` using wrong
+  `results` variable (global tuple list instead of local ScanResult objects)
+- **JSON Version**: Fixed `save_results_json` hardcoding "Aura-sec v2.5.1"
+  instead of using the `VERSION` constant
+- **UI Version**: Fixed thank-you messages referencing "v3.0.0" instead of
+  the actual `VERSION` variable
+- **README Badge**: Fixed version badge showing v3.1.0 instead of current
+
+### 🔧 Technical Improvements
+
+- **New Dependencies**: Added `argparse`, `ipaddress`, `struct` (stdlib)
+- **10 Scan Modes**: Up from 7 scanning modes
+- **14 Feature Indicators**: Enhanced feature table in banner display
+- **Modular Architecture**: New classes for DNS, HTTP security, subnet scanning
+
+---
+
 ## [3.1.1] - 2025-09-28 🛠️
 
 ### 🐛 Bug Fixes & Code Quality Improvements
