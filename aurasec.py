@@ -1415,7 +1415,7 @@ dns_enumerator = DNSEnumerator()
 http_security = HTTPSecurityAnalyzer()
 subnet_scanner = SubnetScanner()
 def display_banner():
-    """Display the enhanced banner with version 3.0.0."""
+    """Display the enhanced banner with version information."""
     if RICH_AVAILABLE:
         banner_text = r"""
    ('-.                 _  .-')     ('-.               .-')      ('-.
