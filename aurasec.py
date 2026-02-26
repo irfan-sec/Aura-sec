@@ -39,7 +39,6 @@ import asyncio
 import subprocess
 import argparse
 import ipaddress
-import struct
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
@@ -1390,7 +1389,7 @@ class SubnetScanner:
         for port in quick_ports:
             try:
                 future = asyncio.open_connection(ip_str, port)
-                reader, writer = await asyncio.wait_for(
+                _reader, writer = await asyncio.wait_for(
                     future, timeout=timeout
                 )
                 writer.close()

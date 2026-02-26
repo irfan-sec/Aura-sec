@@ -1,17 +1,46 @@
-# Aura-sec v3.1.1 🚀
+# Aura-sec v4.0.0 🚀
 
-![Version](https://img.shields.io/badge/version-v3.1.0-blue)
+![Version](https://img.shields.io/badge/version-v4.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.7+-brightgreen)
 ![Status](https://img.shields.io/badge/status-World's%20Best%20Tool-gold)
 
 **🎯 The World's Most Advanced Open-Source Security Scanner**
 
-A revolutionary cybersecurity reconnaissance tool featuring AI-powered service detection, real-time threat intelligence, cloud infrastructure hunting, and advanced evasion techniques. Built for cybersecurity professionals, penetration testers, and students.
+A revolutionary cybersecurity reconnaissance tool featuring AI-powered service detection, real-time threat intelligence, cloud infrastructure hunting, advanced evasion techniques, DNS enumeration, HTTP security analysis, and subnet discovery. Built for cybersecurity professionals, penetration testers, and students.
 
 ---
 
-## 🌟 What's New in v3.0.0
+## 🌟 What's New in v4.0.0
+
+### ⌨️ Command-Line Interface
+- **Non-Interactive Mode**: Full argparse support for scripted/automated usage
+- **All Modes via CLI**: `--mode turbo`, `--mode dns`, `--mode http-security`, etc.
+- **Custom Ports**: `--ports 22,80,443` or `--ports 1-65535`
+- **Report Export**: `--output report --format json` for automated pipelines
+
+### 🌐 Subnet/CIDR Scanning
+- **Host Discovery**: Scan entire networks with CIDR notation
+- **Live Host Detection**: TCP-based host discovery across common ports
+- **Reverse DNS**: Automatic hostname resolution for discovered hosts
+- **Scalable**: Handles up to /22 networks efficiently
+
+### 📡 DNS Enumeration
+- **Record Analysis**: A, AAAA, MX, NS record enumeration
+- **Subdomain Discovery**: 60+ common subdomain brute-force checks
+- **Mail Server Detection**: Automatic mail infrastructure discovery
+- **Name Server Mapping**: DNS infrastructure identification
+
+### 🔒 HTTP Security Headers
+- **Header Analysis**: Check for 8+ critical security headers
+- **Security Grading**: A+ to F grading system based on header presence
+- **Information Disclosure**: Detect headers that leak server info
+- **Recommendations**: Actionable remediation guidance
+
+### 🐛 Bug Fixes
+- Fixed text report crash when generating enhanced reports
+- Fixed version string inconsistencies across all output formats
+- Fixed hardcoded version references in JSON exports and UI messages
 
 ### 🤖 AI-Powered Intelligence
 - **Machine Learning Fingerprinting**: Advanced service detection using AI algorithms
@@ -89,6 +118,24 @@ Classic scanning (v2.5.1 compatibility)
 - **Traditional Methods**: Classic TCP/UDP scanning
 - **Familiar Interface**: Original command structure
 
+### 8. 🌐 Subnet Scan
+CIDR network host discovery and sweep
+- **Network Discovery**: Find live hosts in IP ranges
+- **TCP Probing**: Connect-based host detection
+- **Reverse DNS**: Hostname resolution for found hosts
+
+### 9. 📡 DNS Enumeration
+DNS record analysis and subdomain discovery
+- **Record Types**: A, AAAA, MX, NS enumeration
+- **Subdomains**: 60+ common subdomain checks
+- **Infrastructure**: Mail and name server mapping
+
+### 10. 🔒 HTTP Security
+HTTP security headers analysis and grading
+- **Header Check**: 8+ critical security headers
+- **Grading**: A+ to F security grade
+- **Disclosure**: Information leakage detection
+
 ---
 
 ## 🎯 Key Features
@@ -96,9 +143,11 @@ Classic scanning (v2.5.1 compatibility)
 ### Core Scanning Capabilities
 * **Multi-Protocol Scanning**: TCP, UDP, and combined scanning modes
 * **Async Performance**: Ultra-high-speed scanning using asyncio
-* **Multiple Scan Modes**: 7 specialized scanning modes for different use cases
+* **Multiple Scan Modes**: 10 specialized scanning modes for different use cases
 * **Port Range Flexibility**: Common ports, custom ranges, or full port scanning
 * **Hostname Resolution**: Advanced DNS resolution with fallback mechanisms
+* **Subnet/CIDR Scanning**: Network-wide host discovery and sweep
+* **Command-Line Interface**: Non-interactive argparse support for automation
 
 ### AI-Powered Service Detection
 * **Machine Learning Models**: AI-based service fingerprinting
@@ -150,9 +199,30 @@ Aura-sec requires Python 3.7+ and several advanced dependencies:
 
 ## 🎯 Quick Start
 
-### Basic Usage
+### Basic Usage (Interactive)
 ```bash
 python3 aurasec.py
+```
+
+### Command-Line Usage (Non-Interactive)
+```bash
+# Turbo scan a target
+python3 aurasec.py --target example.com --mode turbo
+
+# DNS enumeration
+python3 aurasec.py --mode dns --domain example.com
+
+# HTTP security headers check
+python3 aurasec.py --mode http-security --target example.com --ports 443
+
+# Subnet host discovery
+python3 aurasec.py --mode subnet --cidr 192.168.1.0/24
+
+# Scan specific ports and export JSON report
+python3 aurasec.py -t example.com -m turbo -p 22,80,443,8080 -o report -f json
+
+# Show version
+python3 aurasec.py --version
 ```
 
 ### Advanced Examples
@@ -270,7 +340,14 @@ export AURA_TIMEOUT=5
 - [x] **IoT Specialized Scanning**: Enhanced embedded device fingerprinting
 - [x] **API Security Testing**: REST/GraphQL API vulnerability assessment
 
-### v3.2.0 - Future Vision
+### v4.0.0 - ✅ COMPLETED FEATURES
+- [x] **Command-Line Interface**: Non-interactive argparse support
+- [x] **Subnet/CIDR Scanning**: Network host discovery and sweep
+- [x] **DNS Enumeration**: Record analysis and subdomain discovery
+- [x] **HTTP Security Headers**: Analysis and grading system
+- [x] **Bug Fixes**: Version consistency, report generation fixes
+
+### v4.1.0 - Future Vision
 - [ ] **Quantum-Resistant Scanning**: Post-quantum cryptography assessment
 - [ ] **5G/6G Network Analysis**: Next-generation network protocol support
 - [ ] **AR/VR Visualization**: 3D network topology and threat visualization
@@ -327,5 +404,5 @@ Special thanks to:
 
 ---
 
-**🎯 Ready to revolutionize your security assessments? Welcome to the future of reconnaissance with Aura-sec v3.0.0! 🚀**
+**🎯 Ready to revolutionize your security assessments? Welcome to the future of reconnaissance with Aura-sec v4.0.0! 🚀**
 
